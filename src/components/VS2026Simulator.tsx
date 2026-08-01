@@ -1,16 +1,19 @@
 import React, { useState, useRef, useEffect } from "react";
 import { 
-  ExtensionConfig, ChatMessage, EditorFile 
+  ExtensionConfig, ChatMessage, EditorFile, UserSession 
 } from "../types";
 import { 
   Play, Save, Search, Folder, FileCode, User, 
-  ChevronRight, ChevronDown, Send, Code2, Sparkles, 
+  ChevronRight, ChevronDown, ChevronUp, Send, Code2, Sparkles, 
   Check, RefreshCw, X, Eraser, Info, ArrowUpRight,
-  Terminal, AlertCircle
+  Terminal, AlertCircle, LogOut, Cpu, Zap, CreditCard,
+  PlusCircle, BarChart2, ShieldCheck, Sliders, Key
 } from "lucide-react";
 
 interface Props {
   config: ExtensionConfig;
+  session?: UserSession | null;
+  onChangeChannel?: () => void;
 }
 
 const DEFAULT_EDITOR_FILES: EditorFile[] = [
@@ -117,7 +120,11 @@ namespace MyApp.Controllers
   }
 ];
 
-export default function VS2026Simulator({ config }: Props) {
+export default function VS2026Simulator({ config, session, onChangeChannel }: Props) {
+  const channelName = session?.selectedChannel.name || "Google AI Studio";
+  const channelModel = session?.selectedChannel.defaultModel || config.defaultModel;
+  const username = session?.username || "daluvalanokia@gmail.com";
+
   const [files, setFiles] = useState<EditorFile[]>(DEFAULT_EDITOR_FILES);
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [selection, setSelection] = useState({ start: 0, end: 0, text: "" });
@@ -125,7 +132,7 @@ export default function VS2026Simulator({ config }: Props) {
     {
       id: "greet",
       role: "assistant",
-      content: "Hello! I am connected to Google AI Studio. Select code in the editor on the left and type a prompt, or click one of the slash command buttons below to test my capabilities!",
+      content: `Hello **${username}**! I am connected to **${channelName}** running model \`${channelModel}\`. Highlight C# code in the editor on the left and type a prompt or click a slash command below!`,
       timestamp: new Date()
     }
   ]);
@@ -139,6 +146,32 @@ export default function VS2026Simulator({ config }: Props) {
   const [insertSuccess, setInsertSuccess] = useState(false);
   const [loadedActiveFile, setLoadedActiveFile] = useState(false);
   const [loadedSolutionStructure, setLoadedSolutionStructure] = useState(false);
+
+  // Collapsible Account & Credits/Usage Panel States
+  const [isAccountPanelExpanded, setIsAccountPanelExpanded] = useState(true);
+  const [credits, setCredits] = useState(
+    session?.credits || {
+      totalCredits: 1000,
+      usedCredits: 160,
+      remainingCredits: 840,
+      planName: session?.selectedChannel.isFreeTier ? "Developer Free Tier" : "Pro Enterprise Tier",
+      tokensUsedToday: 14280,
+      requestsLimitPerDay: 500,
+      requestsUsedToday: 32,
+      costPerPrompt: 10
+    }
+  );
+  const [topUpToast, setTopUpToast] = useState(false);
+
+  const handleTopUpCredits = () => {
+    setCredits((prev) => ({
+      ...prev,
+      totalCredits: prev.totalCredits + 500,
+      remainingCredits: prev.remainingCredits + 500
+    }));
+    setTopUpToast(true);
+    setTimeout(() => setTopUpToast(false), 3000);
+  };
 
   // Simulated MSBuild Engine States
   const [showBottomPane, setShowBottomPane] = useState(false);
@@ -294,9 +327,37 @@ export default function VS2026Simulator({ config }: Props) {
   };
 
   // Send request to server-side Gemini Proxy `/api/chat`
-  const executeChatRequest = async (promptToSend: string, isCommand = false) => {
+  const executeChatRequest = async (promptToSend: string, isCommand = false, autoApply = false) => {
     if (isLoading) return;
+
+    // Credit Verification
+    if (credits.remainingCredits < credits.costPerPrompt) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(36).substring(7),
+          role: "assistant",
+          content: `⚠️ **Insufficient Credits!** You need at least \`${credits.costPerPrompt}\` credits to connect with **${channelName}**. Please click **Refill +500 Free Credits** in your Account Panel above!`,
+          timestamp: new Date()
+        }
+      ]);
+      return;
+    }
+
     setIsLoading(true);
+
+    // Deduct credits immediately
+    setCredits((prev) => {
+      const remaining = Math.max(0, prev.remainingCredits - prev.costPerPrompt);
+      const used = prev.usedCredits + prev.costPerPrompt;
+      return {
+        ...prev,
+        remainingCredits: remaining,
+        usedCredits: used,
+        requestsUsedToday: prev.requestsUsedToday + 1,
+        tokensUsedToday: prev.tokensUsedToday + 380
+      };
+    });
 
     const userMsgId = Math.random().toString(36).substring(7);
     const updatedMessages: ChatMessage[] = [
@@ -347,8 +408,10 @@ export default function VS2026Simulator({ config }: Props) {
       
       // Look for code blocks inside the response to allow C# injection
       const codeBlockMatch = data.text.match(/```(?:csharp|cs|json|javascript)?\n([\s\S]*?)```/);
+      let generatedCode = "";
       if (codeBlockMatch && codeBlockMatch[1]) {
-        setLastGeneratedCode(codeBlockMatch[1]);
+        generatedCode = codeBlockMatch[1];
+        setLastGeneratedCode(generatedCode);
       }
 
       setChatMessages((prev) => [
@@ -360,13 +423,25 @@ export default function VS2026Simulator({ config }: Props) {
           timestamp: new Date()
         }
       ]);
+
+      // Auto-apply solution if autoApply parameter is true and code was returned
+      if (autoApply && generatedCode) {
+        setTimeout(() => {
+          const file = files[activeFileIndex];
+          const updated = [...files];
+          updated[activeFileIndex] = { ...file, content: generatedCode };
+          setFiles(updated);
+          setInsertSuccess(true);
+          setTimeout(() => setInsertSuccess(false), 3000);
+        }, 300);
+      }
     } catch (err: any) {
       setChatMessages((prev) => [
         ...prev,
         {
           id: Math.random().toString(36).substring(7),
           role: "assistant",
-          content: `❌ Error querying Gemini: ${err.message || "Failed to communicate with proxy API."}`,
+          content: `❌ Error querying ${channelName}: ${err.message || "Failed to communicate with proxy API."}`,
           timestamp: new Date()
         }
       ]);
@@ -460,18 +535,31 @@ export default function VS2026Simulator({ config }: Props) {
     <div className="bg-[#2D2D30] border border-gray-800 rounded-xl overflow-hidden shadow-2xl flex flex-col h-full text-gray-300 text-xs">
       {/* VS Title Bar */}
       <div className="bg-[#1E1E1E] px-4 py-2 flex items-center justify-between border-b border-[#333]">
-        <div className="flex items-center space-x-2">
-          <Code2 className="w-4 h-4 text-purple-400" />
-          <span className="font-semibold text-gray-200">
-            MyAIStudioExtension (Debugging) - Microsoft Visual Studio 2026 (Experimental Instance)
+        <div className="flex items-center space-x-2 truncate pr-2">
+          <Code2 className="w-4 h-4 text-purple-400 shrink-0" />
+          <span className="font-semibold text-gray-200 truncate">
+            MyAIStudioExtension (Debugging) - Microsoft Visual Studio 2026
           </span>
         </div>
-        <div className="flex items-center space-x-3 text-[10px] text-gray-500">
-          <span className="bg-gray-800 text-gray-400 px-2 py-0.5 rounded flex items-center space-x-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-            <span>Live Dev Host</span>
+        <div className="flex items-center space-x-3 text-[10px] text-gray-400 shrink-0">
+          <span className="bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded flex items-center space-x-1">
+            <Cpu className="w-3 h-3 text-indigo-400" />
+            <span>Channel: {channelName}</span>
           </span>
-          <span>daluvalanokia@gmail.com</span>
+          <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded flex items-center space-x-1">
+            <User className="w-3 h-3 text-indigo-400" />
+            <span>{username}</span>
+          </span>
+          {onChangeChannel && (
+            <button
+              onClick={onChangeChannel}
+              className="bg-gray-800 hover:bg-gray-700 text-indigo-300 px-2 py-0.5 rounded border border-gray-700 transition flex items-center space-x-1"
+              title="Change AI Channel / Switch User"
+            >
+              <LogOut className="w-3 h-3 text-indigo-400" />
+              <span>Switch Channel</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -532,7 +620,9 @@ export default function VS2026Simulator({ config }: Props) {
             disabled
           />
         </div>
-        <span className="text-xs italic text-gray-500 pl-2">Simulator connected to Google AI Studio</span>
+        <span className="text-xs italic text-indigo-300 pl-2">
+          Connected to {channelName} ({channelModel})
+        </span>
       </div>
 
       {/* IDE Layout Area */}
@@ -866,24 +956,142 @@ export default function VS2026Simulator({ config }: Props) {
         {activeTab === "chatbot" && (
           <div className="w-80 bg-[#1E1E1E] border-l border-[#3F3F46] flex flex-col h-full min-w-0">
             {/* Tool Window Header */}
-            <div className="bg-[#2D2D30] px-3 py-2 border-b border-[#3F3F46] flex items-center justify-between text-gray-200">
+            <div className="bg-[#2D2D30] px-3 py-2 border-b border-[#3F3F46] flex items-center justify-between text-gray-200 shrink-0">
               <div className="flex items-center space-x-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="font-semibold">{config.extensionName}</span>
+                <span className="font-semibold text-xs">{config.extensionName}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <button onClick={clearChat} className="text-gray-500 hover:text-gray-300 p-0.5 rounded" title="Clear Chat Log">
                   <Eraser className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-[10px] bg-indigo-950 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-900">
+                <span className="text-[10px] bg-indigo-950 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-900 font-mono">
                   {config.defaultModel}
                 </span>
               </div>
             </div>
 
+            {/* Collapsible / Expandable Account Information & Credits/Usage Panel */}
+            <div className="bg-[#252526] border-b border-[#3F3F46] shadow-md transition-all duration-300 shrink-0">
+              {/* Compact Summary Bar / Toggle Header */}
+              <div 
+                onClick={() => setIsAccountPanelExpanded(!isAccountPanelExpanded)}
+                className="px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-[#2D2D30] transition select-none"
+                title="Click to expand/collapse account info & credit metrics"
+              >
+                <div className="flex items-center space-x-2 truncate pr-2">
+                  <User className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <span className="font-semibold text-gray-200 text-[11px] truncate max-w-[110px]" title={username}>
+                    {username}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-2 shrink-0">
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                    credits.remainingCredits > 200 
+                      ? "bg-emerald-950 text-emerald-300 border-emerald-800/80"
+                      : credits.remainingCredits > 50
+                      ? "bg-amber-950 text-amber-300 border-amber-800/80"
+                      : "bg-red-950 text-red-300 border-red-800/80"
+                  }`}>
+                    <Zap className="w-3 h-3 text-amber-400 shrink-0" />
+                    <span>{credits.remainingCredits} Credits</span>
+                  </span>
+
+                  <button className="text-gray-400 hover:text-white">
+                    {isAccountPanelExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Expanded Account & Usage Details */}
+              {isAccountPanelExpanded && (
+                <div className="px-3 py-2.5 border-t border-[#333] space-y-2.5 text-[10px] bg-[#1E1E1E] animate-fade-in">
+                  {/* Account & Channel Metadata Grid */}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div className="bg-[#2D2D30] p-2 rounded border border-[#3F3F46]">
+                      <span className="text-gray-400 block text-[9px] uppercase tracking-wider font-semibold">User ID</span>
+                      <span className="font-medium text-gray-200 truncate block" title={username}>{username}</span>
+                    </div>
+                    <div className="bg-[#2D2D30] p-2 rounded border border-[#3F3F46]">
+                      <span className="text-gray-400 block text-[9px] uppercase tracking-wider font-semibold">Plan Name</span>
+                      <span className="font-bold text-indigo-300 truncate block">{credits.planName}</span>
+                    </div>
+                  </div>
+
+                  {/* Credits Balance Progress Meter */}
+                  <div className="space-y-1 bg-[#252526] p-2 rounded border border-[#333]">
+                    <div className="flex justify-between items-center text-gray-300 font-medium text-[10px]">
+                      <span className="flex items-center gap-1">
+                        <CreditCard className="w-3 h-3 text-indigo-400" />
+                        <span>Credits Remaining</span>
+                      </span>
+                      <span className="font-mono text-indigo-300 font-bold">{credits.remainingCredits} / {credits.totalCredits}</span>
+                    </div>
+                    <div className="w-full bg-[#111] h-2 rounded-full overflow-hidden border border-[#333]">
+                      <div 
+                        className={`h-full transition-all duration-500 ${
+                          (credits.remainingCredits / credits.totalCredits) > 0.3 
+                            ? "bg-gradient-to-r from-indigo-500 to-emerald-400"
+                            : "bg-gradient-to-r from-amber-500 to-red-500"
+                        }`}
+                        style={{ width: `${Math.min(100, Math.max(0, (credits.remainingCredits / credits.totalCredits) * 100))}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Usage Breakdown Metrics */}
+                  <div className="bg-[#252526] p-2 rounded border border-[#333] space-y-1 text-gray-300">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Connected AI Channel:</span>
+                      <span className="font-semibold text-indigo-300">{channelName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Daily Requests Used:</span>
+                      <span className="font-mono text-gray-200">{credits.requestsUsedToday} / {credits.requestsLimitPerDay}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Tokens Processed:</span>
+                      <span className="font-mono text-gray-200">{credits.tokensUsedToday.toLocaleString()} tokens</span>
+                    </div>
+                    <div className="flex justify-between border-t border-[#333] pt-1 mt-1">
+                      <span className="text-gray-400">Cost Per Request:</span>
+                      <span className="font-mono text-amber-400 font-semibold">-{credits.costPerPrompt} Credits</span>
+                    </div>
+                  </div>
+
+                  {/* Action Row */}
+                  <div className="flex items-center justify-between pt-0.5">
+                    <button
+                      onClick={handleTopUpCredits}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-2.5 py-1 rounded transition text-[10px] flex items-center space-x-1 shadow"
+                    >
+                      <PlusCircle className="w-3 h-3" />
+                      <span>Refill +500 Free Credits</span>
+                    </button>
+
+                    {topUpToast && (
+                      <span className="text-emerald-400 font-bold animate-pulse text-[10px]">
+                        ✓ +500 Credits Added!
+                      </span>
+                    )}
+
+                    {onChangeChannel && (
+                      <button
+                        onClick={onChangeChannel}
+                        className="text-gray-400 hover:text-white underline text-[9.5px]"
+                      >
+                        Switch Channel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Active Extension Selection Context Indicator */}
             {selectedInEditor ? (
-              <div className="bg-[#252526] px-3 py-1.5 border-b border-[#3F3F46] text-[10px] flex items-center justify-between">
+              <div className="bg-[#252526] px-3 py-1.5 border-b border-[#3F3F46] text-[10px] flex items-center justify-between shrink-0">
                 <span className="text-green-400 flex items-center space-x-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                   <span>Active code selection captured</span>
@@ -899,18 +1107,18 @@ export default function VS2026Simulator({ config }: Props) {
                 </button>
               </div>
             ) : (
-              <div className="bg-yellow-950 bg-opacity-30 px-3 py-1.5 border-b border-yellow-900 text-[10px] text-yellow-300 flex items-center space-x-1.5">
+              <div className="bg-yellow-950 bg-opacity-30 px-3 py-1.5 border-b border-yellow-900 text-[10px] text-yellow-300 flex items-center space-x-1.5 shrink-0">
                 <Info className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" />
-                <span>Tip: Highlight code in SortAlgorithms.cs first!</span>
+                <span>Tip: Select code in {files[activeFileIndex].name} to target AI edits!</span>
               </div>
             )}
 
             {/* Chatbot Message Log */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar min-h-0">
               {chatMessages.map((msg) => (
                 <div key={msg.id} className={`flex space-x-2 ${msg.role === "user" ? "justify-end" : ""}`}>
                   {msg.role === "assistant" && (
-                    <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 mt-0.5">
+                    <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 mt-0.5 shadow">
                       VS
                     </div>
                   )}
@@ -934,7 +1142,7 @@ export default function VS2026Simulator({ config }: Props) {
                   <div className="bg-[#2D2D30] p-3 rounded-lg text-gray-400 border border-[#3F3F46] text-[11px]">
                     <div className="flex items-center space-x-2">
                       <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-                      <span>Gemini is generating code solution...</span>
+                      <span>{channelName} is modifying & generating solution...</span>
                     </div>
                   </div>
                 </div>
@@ -946,7 +1154,7 @@ export default function VS2026Simulator({ config }: Props) {
 
             {/* Slash Command Buttons list */}
             {config.slashCommands.length > 0 && (
-              <div className="px-3 py-2 bg-[#252526] border-t border-[#3F3F46] space-y-1">
+              <div className="px-3 py-2 bg-[#252526] border-t border-[#3F3F46] space-y-1 shrink-0">
                 <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
                   Slash Shortcuts:
                 </div>
@@ -969,27 +1177,30 @@ export default function VS2026Simulator({ config }: Props) {
 
             {/* Insert/Apply Solution Button in sidebar if latest solution generated */}
             {lastGeneratedCode && (
-              <div className="bg-indigo-950 p-2.5 border-t border-indigo-900 flex flex-col space-y-1.5 animate-fade-in">
+              <div className="bg-indigo-950 p-2.5 border-t border-indigo-900 flex flex-col space-y-1.5 animate-fade-in shrink-0">
                 <div className="text-[10px] text-indigo-200 flex items-center space-x-1">
                   <Check className="w-3.5 h-3.5 text-green-400" />
-                  <span>AI solution compiled successfully.</span>
+                  <span>AI solution generated for active Visual Studio project.</span>
                 </div>
                 <button
                   onClick={insertGeneratedCode}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-1.5 rounded transition text-xs flex items-center justify-center space-x-1"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 rounded transition text-xs flex items-center justify-center space-x-1.5 shadow-md"
+                  title="Modify the opened file in Visual Studio with this generated solution"
                 >
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                  <span>Insert Solution at Cursor</span>
+                  <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                  <span>Modify & Apply Solution to Visual Studio ({files[activeFileIndex].name})</span>
                 </button>
                 {insertSuccess && (
-                  <p className="text-[10px] text-green-400 text-center font-bold">✓ Code replaced in active window!</p>
+                  <p className="text-[10px] text-emerald-400 text-center font-bold animate-pulse">
+                    ✓ Visual Studio solution updated successfully!
+                  </p>
                 )}
               </div>
             )}
 
             {/* Context Actions Toolbar */}
-            <div className="px-3 py-1.5 bg-[#252526] border-t border-[#3F3F46] flex items-center justify-between text-[11px] text-gray-400">
-              <div className="flex flex-col space-y-1 sm:flex-row sm:space-y-0 sm:space-x-1.5">
+            <div className="px-3 py-1.5 bg-[#252526] border-t border-[#3F3F46] flex items-center justify-between text-[11px] text-gray-400 shrink-0">
+              <div className="flex items-center space-x-1.5">
                 <button
                   onClick={handleReadActiveFile}
                   className={`flex items-center space-x-1 px-1.5 py-0.5 rounded border transition text-[10px] ${
@@ -997,10 +1208,10 @@ export default function VS2026Simulator({ config }: Props) {
                       ? "bg-green-950 text-green-300 border-green-800 font-semibold" 
                       : "bg-[#2D2D30] hover:bg-gray-700 text-gray-300 border-[#3F3F46]"
                   }`}
-                  title="Read the entire active file's content into Gemini prompt context"
+                  title="Include active C# document in AI context"
                 >
                   <FileCode className="w-3 h-3 text-indigo-400" />
-                  <span>Read Active File</span>
+                  <span>Read Document</span>
                 </button>
                 <button
                   onClick={handleReadSolutionStructure}
@@ -1009,20 +1220,46 @@ export default function VS2026Simulator({ config }: Props) {
                       ? "bg-indigo-950 text-indigo-300 border-indigo-800 font-semibold" 
                       : "bg-[#2D2D30] hover:bg-gray-700 text-gray-300 border-[#3F3F46]"
                   }`}
-                  title="Read all project files in the Solution into Gemini workspace index context"
+                  title="Include full Visual Studio solution structure in AI context"
                 >
                   <Folder className="w-3 h-3 text-indigo-400" />
                   <span>Read Solution</span>
                 </button>
               </div>
-              <div className="text-[9px] text-gray-500 font-mono truncate max-w-[100px] italic">
-                {loadedActiveFile ? `File: ${files[activeFileIndex].name}` : loadedSolutionStructure ? `${files.length} Files Loaded` : "No extra context"}
+              <div className="text-[9px] text-gray-500 font-mono truncate italic">
+                Cost: -{credits.costPerPrompt} Cr
               </div>
             </div>
 
-            {/* Input Panel */}
-            <div className="p-3 bg-[#2D2D30] border-t border-[#3F3F46]">
-              <div className="flex space-x-1.5">
+            {/* Enhanced Bottom Prompt Input Panel */}
+            <div className="p-3 bg-[#2D2D30] border-t border-[#3F3F46] space-y-2 shrink-0">
+              {/* Quick Prompt Enhancement Helper Chips */}
+              <div className="flex flex-wrap gap-1">
+                <button
+                  onClick={() => {
+                    const prompt = `Enhance the active C# file '${files[activeFileIndex].name}' with clean exception safety, async/await support, and optimal algorithm performance.`;
+                    setUserInput(prompt);
+                  }}
+                  className="bg-[#1E1E1E] hover:bg-indigo-950 text-gray-300 hover:text-indigo-200 border border-[#3F3F46] hover:border-indigo-800 text-[9.5px] px-2 py-0.5 rounded transition font-medium flex items-center space-x-1"
+                >
+                  <Sparkles className="w-2.5 h-2.5 text-indigo-400" />
+                  <span>⚡ Enhance C# Solution</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    const prompt = `Refactor '${files[activeFileIndex].name}' to fix all performance bottlenecks and improve readability.`;
+                    setUserInput(prompt);
+                  }}
+                  className="bg-[#1E1E1E] hover:bg-indigo-950 text-gray-300 hover:text-indigo-200 border border-[#3F3F46] hover:border-indigo-800 text-[9.5px] px-2 py-0.5 rounded transition font-medium flex items-center space-x-1"
+                >
+                  <Code2 className="w-2.5 h-2.5 text-purple-400" />
+                  <span>🐛 Refactor Solution</span>
+                </button>
+              </div>
+
+              {/* Text Area & Action Buttons Row */}
+              <div className="flex space-x-1.5 items-stretch">
                 <textarea
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
@@ -1033,21 +1270,50 @@ export default function VS2026Simulator({ config }: Props) {
                     }
                   }}
                   disabled={isLoading}
-                  placeholder={selectedInEditor ? "Selected code captured. Type a prompt..." : "Ask Gemini anything or highlight code..."}
-                  rows={1}
-                  className="flex-1 bg-[#1E1E1E] border border-[#3F3F46] rounded px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-indigo-500 resize-none max-h-16 custom-scrollbar"
+                  placeholder={
+                    selectedInEditor 
+                      ? `Targeting code selection in ${files[activeFileIndex].name}...` 
+                      : `Enter prompt to connect with ${channelName} & modify solution...`
+                  }
+                  rows={2}
+                  className="flex-1 bg-[#1E1E1E] border border-[#3F3F46] rounded px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-indigo-500 resize-none max-h-20 custom-scrollbar leading-snug"
                 />
-                <button
-                  onClick={handleSend}
-                  disabled={isLoading || !userInput.trim()}
-                  className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#3F3F46] text-white rounded px-3 py-1.5 flex items-center justify-center transition"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                </button>
+
+                <div className="flex flex-col space-y-1">
+                  <button
+                    onClick={handleSend}
+                    disabled={isLoading || !userInput.trim()}
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#3F3F46] text-white font-semibold rounded px-2.5 py-1 flex items-center justify-center transition text-xs shadow-sm"
+                    title={`Send query to ${channelName} (-10 Credits)`}
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (!userInput.trim()) return;
+                      executeChatRequest(userInput, false, true);
+                    }}
+                    disabled={isLoading || !userInput.trim()}
+                    className="flex-1 bg-emerald-700 hover:bg-emerald-600 disabled:bg-[#3F3F46] text-white font-bold rounded px-2.5 py-1 flex items-center justify-center transition text-[10px] space-x-1 shadow-sm"
+                    title="Send prompt and automatically apply generated solution to active Visual Studio file"
+                  >
+                    <Zap className="w-3 h-3 text-amber-300 fill-amber-300" />
+                    <span>Apply</span>
+                  </button>
+                </div>
               </div>
-              <p className="text-[9px] text-gray-500 mt-1.5 text-center">
-                Uses the AI Studio REST API securely over development proxy.
-              </p>
+
+              {/* Connection & Credit Cost Footnote */}
+              <div className="flex justify-between items-center text-[9px] text-gray-400 px-0.5">
+                <span className="flex items-center space-x-1 truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>Connected to <strong className="text-gray-300">{channelName}</strong></span>
+                </span>
+                <span className="font-mono text-indigo-300 font-medium">
+                  Cost: 10 Credits ({credits.remainingCredits} left)
+                </span>
+              </div>
             </div>
           </div>
         )}

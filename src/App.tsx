@@ -1,13 +1,17 @@
 import React, { useState } from "react";
-import { ExtensionConfig } from "./types";
+import { ExtensionConfig, UserSession } from "./types";
 import ExtensionConfigurator from "./components/ExtensionConfigurator";
 import VS2026Simulator from "./components/VS2026Simulator";
+import SignInPage from "./components/SignInPage";
 import { 
   Sparkles, Code, Download, Terminal, Settings, 
-  HelpCircle, ChevronRight, BookOpen, Layers, Play 
+  HelpCircle, ChevronRight, BookOpen, Layers, Play,
+  User, LogOut, Radio, Cpu
 } from "lucide-react";
 
 export default function App() {
+  const [session, setSession] = useState<UserSession | null>(null);
+
   const [config, setConfig] = useState<ExtensionConfig>({
     extensionName: "Google AI Studio Chatbot",
     author: "DevTools LLC",
@@ -38,36 +42,70 @@ export default function App() {
     ]
   });
 
-  const [activeStepTab, setActiveStepTab] = useState<"prerequisites" | "compile" | "install">("prerequisites");
+  const handleSignIn = (newSession: UserSession) => {
+    setSession(newSession);
+    // Sync extension defaultModel with selected channel model
+    if (newSession.selectedChannel) {
+      setConfig((prev) => ({
+        ...prev,
+        extensionName: `${newSession.selectedChannel.name} Chatbot`,
+        defaultModel: newSession.selectedChannel.defaultModel
+      }));
+    }
+  };
+
+  const handleSignOut = () => {
+    // Keep session around for pre-filling but view sign-in page
+    setSession(null);
+  };
+
+  // If not signed in, show the main Sign-In Page with AI Supporting Channels selection!
+  if (!session) {
+    return <SignInPage onSignIn={handleSignIn} currentSession={session} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col font-sans select-none overflow-x-hidden">
-      {/* Premium Header */}
+      {/* Premium Workspace Header with Active Session and Channel Info */}
       <header className="bg-gray-950 border-b border-gray-900 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl shrink-0">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg border border-indigo-500">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white tracking-tight flex items-center gap-1.5">
-              Visual Studio Chatbot Extension Creator
-              <span className="text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-900 px-1.5 py-0.5 rounded">VS 2026 Compatible</span>
+            <h1 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+              Visual Studio Chatbot Extension Workspace
+              <span className="text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-900 px-2 py-0.5 rounded">
+                VS 2026 Compatible
+              </span>
             </h1>
             <p className="text-xs text-gray-400">Configure, simulate, and download custom AI assistant extensions for your IDE.</p>
           </div>
         </div>
 
-        {/* Info Links */}
-        <div className="flex items-center space-x-4 text-xs text-gray-400 font-medium">
-          <a href="#quick-start-guide" className="hover:text-indigo-400 transition flex items-center space-x-1">
-            <BookOpen className="w-4 h-4" />
-            <span>Developer Guide</span>
-          </a>
-          <span className="text-gray-800">|</span>
-          <span className="flex items-center space-x-1">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            <span>Gemini API Connected</span>
-          </span>
+        {/* User Session & Active AI Channel Info Badge */}
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl px-3 py-1.5 flex items-center space-x-2">
+            <User className="w-4 h-4 text-indigo-400" />
+            <span className="text-gray-200 font-medium">{session.username}</span>
+          </div>
+
+          <div className="bg-indigo-950/80 border border-indigo-800/80 rounded-xl px-3 py-1.5 flex items-center space-x-2 text-indigo-200">
+            <Cpu className="w-4 h-4 text-indigo-400" />
+            <span className="font-semibold">{session.selectedChannel.name}</span>
+            <span className="text-[10px] font-mono text-indigo-400 bg-gray-950 px-1.5 py-0.5 rounded">
+              {session.selectedChannel.defaultModel}
+            </span>
+          </div>
+
+          <button
+            onClick={handleSignOut}
+            className="bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-indigo-600 text-gray-300 hover:text-white px-3 py-1.5 rounded-xl transition flex items-center space-x-1.5 font-medium shadow-sm"
+            title="Switch AI Channel or Sign Out"
+          >
+            <LogOut className="w-4 h-4 text-indigo-400" />
+            <span>Switch AI Channel</span>
+          </button>
         </div>
       </header>
 
@@ -87,7 +125,9 @@ export default function App() {
                 <Terminal className="w-5 h-5 text-indigo-400" />
                 <h3 className="font-semibold text-gray-100 text-base">Live IDE Extension Simulator</h3>
               </div>
-              <span className="text-xs font-mono text-gray-500">Full-Fidelity Active Test Workspace</span>
+              <span className="text-xs font-mono text-indigo-300 bg-indigo-950 px-2 py-0.5 rounded border border-indigo-900">
+                Connected to {session.selectedChannel.name}
+              </span>
             </div>
 
             {/* Quick Helper Tip */}
@@ -98,7 +138,7 @@ export default function App() {
 
             {/* The actual high fidelity simulator component */}
             <div className="flex-1 min-h-0 p-4 bg-gray-950">
-              <VS2026Simulator config={config} />
+              <VS2026Simulator config={config} session={session} onChangeChannel={handleSignOut} />
             </div>
           </div>
         </div>
@@ -167,9 +207,10 @@ export default function App() {
 
       {/* Footer */}
       <footer className="bg-gray-950 border-t border-gray-900 py-6 px-8 text-center text-xs text-gray-500 shrink-0">
-        <p>© 2026 Google AI Studio Coding Workspace. Visual Studio, WPF, and VSIX are trademarks of Microsoft Corporation.</p>
-        <p className="mt-1 text-gray-600">The Gemini API is integrated securely server-side inside the interactive IDE simulator.</p>
+        <p>© 2026 Visual Studio AI Chatbot Workspace. Visual Studio, WPF, and VSIX are trademarks of Microsoft Corporation.</p>
+        <p className="mt-1 text-gray-600">Connected Channel: {session.selectedChannel.name} ({session.selectedChannel.defaultModel}).</p>
       </footer>
     </div>
   );
 }
+

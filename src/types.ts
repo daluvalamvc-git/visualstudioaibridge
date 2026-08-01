@@ -29,3 +29,43 @@ export interface EditorFile {
   language: string;
   content: string;
 }
+
+export interface AIChannel {
+  id: string;
+  name: string;
+  provider: string;
+  category: "Google" | "Cloud Platform" | "AI Builder" | "Free API Provider" | "Local / Open Source";
+  isFreeTier: boolean;
+  defaultModel: string;
+  availableModels: string[];
+  description: string;
+  badge: string;
+  badgeColor: string;
+  endpointUrl?: string;
+  requiresApiKey: boolean;
+  docUrl: string;
+  features: string[];
+}
+
+export interface AccountCredits {
+  totalCredits: number;
+  usedCredits: number;
+  remainingCredits: number;
+  planName: string;
+  tokensUsedToday: number;
+  requestsLimitPerDay: number;
+  requestsUsedToday: number;
+  costPerPrompt: number;
+}
+
+export interface UserSession {
+  username: string;
+  email?: string;
+  signedInAt: Date;
+  selectedChannel: AIChannel;
+  apiKey?: string;
+  customEndpoint?: string;
+  rememberMe: boolean;
+  credits: AccountCredits;
+}
+

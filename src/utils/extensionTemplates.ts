@@ -684,6 +684,106 @@ export function getWebviewHtmlTemplate(config: ExtensionConfig): string {
 </head>
 <body class="h-screen flex flex-col overflow-hidden bg-slate-50 text-slate-900">
 
+  <!-- Sign In Screen & AI Supporting Channels Gateway Overlay -->
+  <div id="signin-gateway-screen" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md overflow-y-auto p-3 sm:p-5 flex items-center justify-center">
+    <div class="max-w-2xl w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-auto animate-fade-in">
+      <!-- Header Banner -->
+      <div class="bg-indigo-600 p-5 text-white flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-bold text-lg shadow-inner">
+            VS
+          </div>
+          <div>
+            <h2 class="text-base font-bold tracking-tight">Visual Studio AI Chatbot Gateway</h2>
+            <p class="text-xs text-indigo-100">Sign in with Google Account &amp; Select AI Supporting Channel</p>
+          </div>
+        </div>
+        <button id="btn-close-signin-gateway" class="text-indigo-200 hover:text-white font-bold text-xs bg-indigo-700/60 hover:bg-indigo-700 px-3 py-1.5 rounded-lg transition cursor-pointer">
+          ✕ Close
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <!-- Section 1: Google Account Sign In & Switcher -->
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
+              <svg class="w-4 h-4 text-indigo-600" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
+              Google Account Sign In &amp; Switcher
+            </label>
+            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
+              Free Developer Credits
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input type="email" id="gateway-email-input" placeholder="Enter Google Account Email (e.g. daluvalanokia@gmail.com)..." class="flex-1 bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600">
+            <button id="btn-gateway-switch-google" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-3.5 py-2 rounded-lg transition shadow-2xs whitespace-nowrap cursor-pointer">
+              Switch Account
+            </button>
+          </div>
+        </div>
+
+        <!-- Section 2: AI Supporting Channels Selection Grid -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+              AI Supporting Channels (11 Supported Providers)
+            </label>
+            <span class="text-[11px] text-slate-500 font-medium">Click channel to select</span>
+          </div>
+
+          <div id="gateway-channels-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto custom-scrollbar p-1">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Section 3: Selected Channel Details & Credentials -->
+        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-3">
+          <div class="flex items-center justify-between">
+            <span id="gateway-selected-channel-title" class="font-bold text-indigo-950 text-xs flex items-center gap-1.5">
+              Google AI Studio
+            </span>
+            <span id="gateway-selected-channel-badge" class="text-[10px] bg-indigo-100 text-indigo-800 font-semibold px-2 py-0.5 rounded-full border border-indigo-200">
+              Recommended • Free Tier
+            </span>
+          </div>
+
+          <!-- Model Selection -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-semibold text-slate-600 block mb-1">Select AI Model</label>
+              <select id="gateway-model-select" class="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-mono font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600">
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] font-semibold text-slate-600 block mb-1">Connection Mode</label>
+              <div class="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="gateway-connection-mode">AI Studio Web Proxy</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- API Key Input Field -->
+          <div id="gateway-apikey-container" class="space-y-1">
+            <div class="flex justify-between items-center text-[10px]">
+              <label class="font-semibold text-slate-700">Account API Key / Token</label>
+              <a id="gateway-get-key-link" href="https://aistudio.google.com" target="_blank" class="text-indigo-600 font-bold hover:underline">Get Free API Key →</a>
+            </div>
+            <input type="password" id="gateway-apikey-input" placeholder="Paste account API Key..." class="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600">
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button id="btn-gateway-signin-submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-md flex items-center justify-center space-x-2 cursor-pointer">
+          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#ffffff"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#ffffff"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#ffffff"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#ffffff"/></svg>
+          <span>Sign In &amp; Launch Visual Studio AI Workspace</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Header -->
   <div class="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between shadow-2xs">
     <div class="flex items-center space-x-2">
@@ -691,13 +791,19 @@ export function getWebviewHtmlTemplate(config: ExtensionConfig): string {
       <span class="text-sm font-bold text-slate-900 tracking-tight">${escapeXml(config.extensionName)}</span>
     </div>
     <div class="flex items-center space-x-2">
-      <!-- User account badge / sign in button -->
+      <!-- Google Sign In / Channel Gateway Trigger -->
+      <button id="btn-open-signin-gateway" title="Click to Sign In or Switch AI Supporting Channel" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md border border-indigo-200 flex items-center gap-1.5 transition font-semibold cursor-pointer">
+        <svg class="w-3.5 h-3.5 text-indigo-600" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
+        <span id="header-channel-label">Sign In / Switch Channel</span>
+      </button>
+
+      <!-- User account badge -->
       <div id="user-account-badge" class="flex items-center gap-2">
         <!-- Dynamically rendered by JS -->
       </div>
       <button id="btn-account-info" title="Google Account & Credits Info" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-md border border-slate-300 flex items-center gap-1.5 transition font-medium cursor-pointer">
-        <svg class="w-3.5 h-3.5 text-indigo-600" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
-        <span>Credits & Info</span>
+        <svg class="w-3.5 h-3.5 text-indigo-600" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
+        <span>Credits &amp; Info</span>
       </button>
       <label for="model-select" class="text-xs text-slate-500 font-medium">Model:</label>
       <select id="model-select" class="bg-slate-50 text-indigo-700 font-mono text-xs px-2.5 py-1 rounded-md border border-slate-300 focus:outline-none focus:border-indigo-600 cursor-pointer font-medium shadow-2xs">
@@ -853,6 +959,150 @@ export function getWebviewHtmlTemplate(config: ExtensionConfig): string {
       });
     }
 
+    // Sign In Gateway DOM elements
+    const signinGatewayScreen = document.getElementById('signin-gateway-screen');
+    const btnCloseSigninGateway = document.getElementById('btn-close-signin-gateway');
+    const btnOpenSigninGateway = document.getElementById('btn-open-signin-gateway');
+    const gatewayEmailInput = document.getElementById('gateway-email-input');
+    const btnGatewaySwitchGoogle = document.getElementById('btn-gateway-switch-google');
+    const gatewayChannelsGrid = document.getElementById('gateway-channels-grid');
+    const gatewaySelectedChannelTitle = document.getElementById('gateway-selected-channel-title');
+    const gatewaySelectedChannelBadge = document.getElementById('gateway-selected-channel-badge');
+    const gatewayModelSelect = document.getElementById('gateway-model-select');
+    const gatewayApikeyContainer = document.getElementById('gateway-apikey-container');
+    const gatewayApikeyInput = document.getElementById('gateway-apikey-input');
+    const gatewayGetKeyLink = document.getElementById('gateway-get-key-link');
+    const btnGatewaySigninSubmit = document.getElementById('btn-gateway-signin-submit');
+    const headerChannelLabel = document.getElementById('header-channel-label');
+
+    // AI Supporting Channels List
+    const AI_CHANNELS = [
+      { id: "aistudio", name: "Google AI Studio", provider: "Google Cloud", badge: "Recommended • Free Tier", isFreeTier: true, requiresApiKey: false, defaultModel: "gemini-3.5-flash", availableModels: ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-pro"], description: "Official Google Developer platform powered by Gemini models.", docUrl: "https://aistudio.google.com" },
+      { id: "base44", name: "Base44 AI Engine", provider: "Base44 Workspace", badge: "Free Developer Tier", isFreeTier: true, requiresApiKey: true, defaultModel: "base44-coder-v2", availableModels: ["base44-coder-v2", "base44-agent-fast"], description: "Full-stack developer AI workspace channel designed for automatic code synthesis.", docUrl: "https://base44.io" },
+      { id: "replit", name: "Replit Agent AI", provider: "Replit Inc.", badge: "Free Community", isFreeTier: true, requiresApiKey: true, defaultModel: "replit-code-v1.5", availableModels: ["replit-code-v1.5", "replit-agent-pro"], description: "Cloud IDE & Agent integration supporting remote execution.", docUrl: "https://replit.com" },
+      { id: "vercel", name: "Vercel AI SDK / v0", provider: "Vercel", badge: "Free Hobby Tier", isFreeTier: true, requiresApiKey: true, defaultModel: "v0-code-assistant", availableModels: ["v0-code-assistant", "vercel-ai-sdk-v4"], description: "Vercel's unified AI SDK bridge & component engine.", docUrl: "https://vercel.com/ai" },
+      { id: "lovable", name: "Lovable AI", provider: "Lovable Devs", badge: "Free Creator Tier", isFreeTier: true, requiresApiKey: true, defaultModel: "lovable-engineer-v1", availableModels: ["lovable-engineer-v1"], description: "Generative UI and full-stack software development engine.", docUrl: "https://lovable.dev" },
+      { id: "groq", name: "Groq Llama 3 (Ultra-Fast)", provider: "Groq Cloud LPU", badge: "100% Free API • 800 tok/s", isFreeTier: true, requiresApiKey: true, defaultModel: "llama-3.3-70b-versatile", availableModels: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "deepseek-r1-distill-llama-70b"], description: "Ultra-high speed LPU inference API providing up to 800 tokens/sec.", docUrl: "https://console.groq.com" },
+      { id: "openrouter", name: "OpenRouter (Free Hub)", provider: "OpenRouter", badge: "Dozens of Free Models", isFreeTier: true, requiresApiKey: true, defaultModel: "deepseek/deepseek-r1:free", availableModels: ["deepseek/deepseek-r1:free", "google/gemini-2.5-flash:free", "qwen/qwen-2.5-coder-32b:free"], description: "Unified router providing access to top open-weights models.", docUrl: "https://openrouter.ai" },
+      { id: "huggingface", name: "Hugging Face Inference API", provider: "Hugging Face", badge: "Serverless Free Tier", isFreeTier: true, requiresApiKey: true, defaultModel: "Qwen/Qwen2.5-Coder-32B-Instruct", availableModels: ["Qwen/Qwen2.5-Coder-32B-Instruct", "meta-llama/Llama-3.2-3B-Instruct"], description: "Open community hub powering serverless inference for coding models.", docUrl: "https://huggingface.co" },
+      { id: "mistral", name: "Mistral AI (Codestral)", provider: "Mistral AI", badge: "Codestral Free Tier", isFreeTier: true, requiresApiKey: true, defaultModel: "codestral-latest", availableModels: ["codestral-latest", "mistral-large-latest"], description: "Dedicated coding model platform optimized for 80+ programming languages.", docUrl: "https://mistral.ai" },
+      { id: "ollama", name: "Ollama / Local AI", provider: "Self-Hosted Localhost", badge: "100% Offline • Local Privacy", isFreeTier: true, requiresApiKey: false, defaultModel: "codellama:13b", availableModels: ["codellama:13b", "qwen2.5-coder:7b", "deepseek-coder:6.7b"], description: "Run models completely offline and privately on your local PC.", docUrl: "https://ollama.com" }
+    ];
+
+    let selectedChannelId = localStorage.getItem('AISTUDIO_SELECTED_CHANNEL') || "aistudio";
+
+    function renderGatewayChannels() {
+      if (!gatewayChannelsGrid) return;
+      gatewayChannelsGrid.innerHTML = "";
+
+      AI_CHANNELS.forEach(ch => {
+        const isSelected = ch.id === selectedChannelId;
+        const card = document.createElement('div');
+        card.className = "p-2.5 rounded-xl border text-xs cursor-pointer transition flex justify-between items-center " +
+          (isSelected ? "bg-indigo-50 border-indigo-500 shadow-2xs" : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50");
+        
+        card.innerHTML = '<div class="space-y-0.5 pr-2">' +
+          '<div class="font-bold text-slate-900 flex items-center gap-1"><span>' + escapeHtml(ch.name) + '</span></div>' +
+          '<div class="text-[10px] text-slate-500 truncate max-w-[180px]">' + escapeHtml(ch.description) + '</div>' +
+          '</div>' +
+          '<span class="text-[9px] px-2 py-0.5 rounded-full font-semibold shrink-0 ' +
+          (isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700') + '">' +
+          escapeHtml(ch.badge) + '</span>';
+
+        card.addEventListener('click', () => {
+          selectedChannelId = ch.id;
+          renderGatewayChannels();
+          updateGatewaySelectedChannel();
+        });
+
+        gatewayChannelsGrid.appendChild(card);
+      });
+    }
+
+    function updateGatewaySelectedChannel() {
+      const ch = AI_CHANNELS.find(c => c.id === selectedChannelId) || AI_CHANNELS[0];
+      if (gatewaySelectedChannelTitle) gatewaySelectedChannelTitle.innerText = ch.name;
+      if (gatewaySelectedChannelBadge) gatewaySelectedChannelBadge.innerText = ch.badge;
+      if (gatewayGetKeyLink) gatewayGetKeyLink.href = ch.docUrl;
+
+      if (gatewayModelSelect) {
+        gatewayModelSelect.innerHTML = "";
+        ch.availableModels.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m;
+          opt.innerText = m;
+          gatewayModelSelect.appendChild(opt);
+        });
+        gatewayModelSelect.value = ch.defaultModel;
+      }
+
+      if (gatewayApikeyContainer) {
+        if (ch.requiresApiKey) {
+          gatewayApikeyContainer.classList.remove('hidden');
+        } else {
+          gatewayApikeyContainer.classList.add('hidden');
+        }
+      }
+    }
+
+    function openSigninGateway() {
+      if (gatewayEmailInput) gatewayEmailInput.value = currentUserEmail;
+      renderGatewayChannels();
+      updateGatewaySelectedChannel();
+      if (gatewayApikeyInput) gatewayApikeyInput.value = userKeys[currentUserEmail] || "";
+      if (signinGatewayScreen) signinGatewayScreen.classList.remove('hidden');
+    }
+
+    if (btnOpenSigninGateway) {
+      btnOpenSigninGateway.addEventListener('click', openSigninGateway);
+    }
+
+    if (btnCloseSigninGateway && signinGatewayScreen) {
+      btnCloseSigninGateway.addEventListener('click', () => {
+        signinGatewayScreen.classList.add('hidden');
+      });
+    }
+
+    if (btnGatewaySwitchGoogle) {
+      btnGatewaySwitchGoogle.addEventListener('click', () => {
+        const val = gatewayEmailInput ? gatewayEmailInput.value.trim() : "";
+        if (val) {
+          currentUserEmail = val;
+          localStorage.setItem('AISTUDIO_CURRENT_USER', currentUserEmail);
+          currentApiKey = userKeys[currentUserEmail] || "";
+          if (gatewayApikeyInput) gatewayApikeyInput.value = currentApiKey;
+          alert("✓ Switched Google Account to: " + currentUserEmail);
+          updateAccountState();
+        }
+      });
+    }
+
+    if (btnGatewaySigninSubmit) {
+      btnGatewaySigninSubmit.addEventListener('click', () => {
+        const emailVal = gatewayEmailInput ? gatewayEmailInput.value.trim() : "";
+        if (emailVal) {
+          currentUserEmail = emailVal;
+          localStorage.setItem('AISTUDIO_CURRENT_USER', currentUserEmail);
+        }
+
+        const keyVal = gatewayApikeyInput ? gatewayApikeyInput.value.trim() : "";
+        if (keyVal) {
+          userKeys[currentUserEmail] = keyVal;
+          localStorage.setItem('AISTUDIO_USER_KEYS', JSON.stringify(userKeys));
+          localStorage.setItem('AISTUDIO_API_KEY', keyVal);
+          currentApiKey = keyVal;
+        }
+
+        localStorage.setItem('AISTUDIO_SELECTED_CHANNEL', selectedChannelId);
+        localStorage.setItem('AISTUDIO_SIGNED_IN', 'true');
+
+        if (signinGatewayScreen) signinGatewayScreen.classList.add('hidden');
+        updateAccountState();
+        const activeChanName = (AI_CHANNELS.find(c => c.id === selectedChannelId)?.name) || 'Google AI Studio';
+        addMessage('assistant', '✓ Signed in as **' + currentUserEmail + '** connected to **' + activeChanName + '**. Visual Studio AI workspace connected!');
+      });
+    }
+
     // Account & API Key Management
     const userAccountBadge = document.getElementById('user-account-badge');
     const apiKeyBannerTitle = document.getElementById('api-key-banner-title');
@@ -882,17 +1132,23 @@ export function getWebviewHtmlTemplate(config: ExtensionConfig): string {
         apiKeyInput.value = currentApiKey;
       }
 
+      const activeChan = AI_CHANNELS.find(c => c.id === selectedChannelId) || AI_CHANNELS[0];
+      if (headerChannelLabel) {
+        const shortUser = currentUserEmail ? currentUserEmail.split('@')[0] : 'User';
+        headerChannelLabel.innerText = shortUser + ' • ' + activeChan.name;
+      }
+
       renderUserBadge();
 
-      if (currentApiKey) {
-        apiKeyBanner.classList.add('hidden');
+      if (currentApiKey || !activeChan.requiresApiKey) {
+        if (apiKeyBanner) apiKeyBanner.classList.add('hidden');
       } else {
-        apiKeyBanner.classList.remove('hidden');
+        if (apiKeyBanner) apiKeyBanner.classList.remove('hidden');
         if (apiKeyBannerTitle) {
           apiKeyBannerTitle.innerHTML = '<span>⚠️</span> <span>API Key Needed for ' + escapeHtml(currentUserEmail) + '</span>';
         }
         if (apiKeyBannerDesc) {
-          apiKeyBannerDesc.innerHTML = 'Signed in as <strong>' + escapeHtml(currentUserEmail) + '</strong>. Each Google account includes its own free Gemini API key quota. Paste the free API Key created under this account:';
+          apiKeyBannerDesc.innerHTML = 'Signed in as <strong>' + escapeHtml(currentUserEmail) + '</strong> (' + escapeHtml(activeChan.name) + '). Enter the API key for this account or click "Sign In / Switch Channel" above:';
         }
       }
     }
@@ -902,13 +1158,13 @@ export function getWebviewHtmlTemplate(config: ExtensionConfig): string {
       const initial = currentUserEmail ? currentUserEmail.charAt(0).toUpperCase() : 'G';
       userAccountBadge.innerHTML = '<div class="flex items-center gap-1.5 bg-indigo-50/80 border border-indigo-200/80 px-2.5 py-1 rounded-md text-xs">' +
         '<div class="w-4 h-4 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-[9px]">' + initial + '</div>' +
-        '<span class="font-semibold text-slate-800 text-[11px] max-w-[140px] truncate" title="' + escapeHtml(currentUserEmail) + '">' + escapeHtml(currentUserEmail) + '</span>' +
-        '<button id="btn-switch-user" title="Sign in with a different Google account" class="text-indigo-600 hover:text-indigo-800 hover:underline font-bold text-[10px] ml-1 cursor-pointer">Switch</button>' +
+        '<span class="font-semibold text-slate-800 text-[11px] max-w-[120px] truncate" title="' + escapeHtml(currentUserEmail) + '">' + escapeHtml(currentUserEmail) + '</span>' +
+        '<button id="btn-switch-user" title="Sign in or switch AI supporting channel" class="text-indigo-600 hover:text-indigo-800 hover:underline font-bold text-[10px] ml-1 cursor-pointer">Switch</button>' +
         '</div>';
 
       const btnSwitchUser = document.getElementById('btn-switch-user');
       if (btnSwitchUser) {
-        btnSwitchUser.addEventListener('click', promptSwitchAccount);
+        btnSwitchUser.addEventListener('click', openSigninGateway);
       }
     }
 

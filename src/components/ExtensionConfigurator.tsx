@@ -71,11 +71,11 @@ export default function ExtensionConfigurator({ config, onChange }: Props) {
 
       // Folder structure creation
       zip.file(".gitignore", getGitignoreTemplate());
-      zip.file("aistudiochatbotintegrator.sln", getSlnTemplate(config, "aistudiochatbotintegrator", "aistudiochatbotintegrator.csproj"));
-      zip.file("source.extension.vsixmanifest", getManifestTemplate(config, "aistudiochatbotintegrator"));
-      zip.file("aistudiochatbotintegrator.csproj", getCsprojTemplate(config, "aistudiochatbotintegrator"));
-      zip.file("MyAIStudioExtensionPackage.vsct", getPackageVsctTemplate(config));
-      zip.file("MyAIStudioExtensionPackage.cs", getPackageTemplate(config));
+      zip.file("visualstudioaibridge.sln", getSlnTemplate(config, "visualstudioaibridge", "visualstudioaibridge.csproj"));
+      zip.file("source.extension.vsixmanifest", getManifestTemplate(config, "visualstudioaibridge"));
+      zip.file("visualstudioaibridge.csproj", getCsprojTemplate(config, "visualstudioaibridge"));
+      zip.file("visualstudioaibridgePackage.vsct", getPackageVsctTemplate(config));
+      zip.file("visualstudioaibridgePackage.cs", getPackageTemplate(config));
       zip.file("ChatWindow.cs", getChatWindowTemplate(config));
       zip.file("ChatWindowCommand.cs", getChatWindowCommandTemplate());
       zip.file("ChatWindowControl.xaml", getChatWindowControlXamlTemplate());

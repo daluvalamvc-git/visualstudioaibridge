@@ -13,10 +13,10 @@ export default function App() {
   const [session, setSession] = useState<UserSession | null>(null);
 
   const [config, setConfig] = useState<ExtensionConfig>({
-    extensionName: "Google AI Studio Chatbot",
+    extensionName: "visualstudioaibridge",
     author: "DevTools LLC",
     version: "1.0.0",
-    description: "Connects Visual Studio 2026 securely to Google AI Studio to run custom coding commands, prompts, and inject code solutions.",
+    description: "Connects Visual Studio 2026 securely via visualstudioaibridge to AI models to run custom coding commands, prompts, and inject code solutions.",
     defaultModel: "gemini-2.5-flash",
     systemPrompt: "You are an elite coding assistant inside a Visual Studio chatbot tool window. Give concise, well-annotated C# or visual solutions. Do not include verbose introductory explanations.",
     vsVersion: "2026",
@@ -74,7 +74,7 @@ export default function App() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-              Visual Studio Chatbot Extension Workspace
+              visualstudioaibridge Extension Workspace
               <span className="text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-900 px-2 py-0.5 rounded">
                 VS 2026 Compatible
               </span>
@@ -168,7 +168,7 @@ export default function App() {
               </div>
               <h4 className="font-semibold text-sm text-gray-200">Extract ZIP &amp; Workloads</h4>
               <p className="text-xs text-gray-400 leading-relaxed">
-                Extract the downloaded ZIP completely before opening. Both <code>MyAIStudioExtension.csproj</code> and <code>aistudiochatbotintegrator.csproj</code> are included so Visual Studio finds all project files without path errors.
+                Extract the downloaded ZIP completely before opening. Both <code>visualstudioaibridge.csproj</code> and <code>visualstudioaibridge.sln</code> are included so Visual Studio finds all project files without path errors.
               </p>
               <div className="bg-indigo-950 bg-opacity-40 border border-indigo-900 rounded p-2 text-[11px] text-indigo-300">
                 <strong>If "Load Failed":</strong> Open <em>Visual Studio Installer</em>, click <strong>Modify</strong>, and check <strong>"Visual Studio extension development"</strong> under Workloads.
@@ -183,7 +183,7 @@ export default function App() {
               </div>
               <h4 className="font-semibold text-sm text-gray-200">Compile &amp; Sandbox Run</h4>
               <p className="text-xs text-gray-400 leading-relaxed">
-                Extract the downloaded ZIP. Double-click the <strong>MyAIStudioExtension.sln</strong> solution file. Press <strong>F5</strong> to launch an <strong>"Experimental Instance"</strong> sandbox window of Visual Studio. Find your docked chatbot window under <strong>View &gt; Other Windows</strong>!
+                Extract the downloaded ZIP. Double-click the <strong>visualstudioaibridge.sln</strong> solution file. Press <strong>F5</strong> to launch an <strong>"Experimental Instance"</strong> sandbox window of Visual Studio. Find your docked chatbot window under <strong>View &gt; Other Windows</strong>!
               </p>
             </div>
 
@@ -195,7 +195,7 @@ export default function App() {
               </div>
               <h4 className="font-semibold text-sm text-gray-200">Where to Find .VSIX Installer</h4>
               <p className="text-xs text-gray-400 leading-relaxed">
-                When you click <strong>Build Solution</strong> in Visual Studio, MSBuild compiles the C# DLLs and automatically packages the installer at <code>\bin\Debug\MyAIStudioExtension.vsix</code> (or <code>\bin\Release\MyAIStudioExtension.vsix</code>).
+                When you click <strong>Build Solution</strong> in Visual Studio, MSBuild compiles the C# DLLs and automatically packages the installer at <code>\bin\Debug\visualstudioaibridge.vsix</code> (or <code>\bin\Release\visualstudioaibridge.vsix</code>).
               </p>
               <div className="bg-emerald-950 bg-opacity-40 border border-emerald-900 rounded p-2 text-[11px] text-emerald-300">
                 <strong>VSIX Packaging Enabled:</strong> The <code>&lt;CreateVsixContainer&gt;true&lt;/CreateVsixContainer&gt;</code> property in the <code>.csproj</code> forces MSBuild to output the <code>.vsix</code> installer file into <code>bin\Debug\</code> or <code>bin\Release\</code> during build. Double-click the <code>.vsix</code> file to install it into Visual Studio!
@@ -207,7 +207,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="bg-gray-950 border-t border-gray-900 py-6 px-8 text-center text-xs text-gray-500 shrink-0">
-        <p>© 2026 Visual Studio AI Chatbot Workspace. Visual Studio, WPF, and VSIX are trademarks of Microsoft Corporation.</p>
+        <p>© 2026 visualstudioaibridge Workspace. Visual Studio, WPF, and VSIX are trademarks of Microsoft Corporation.</p>
         <p className="mt-1 text-gray-600">Connected Channel: {session.selectedChannel.name} ({session.selectedChannel.defaultModel}).</p>
       </footer>
     </div>

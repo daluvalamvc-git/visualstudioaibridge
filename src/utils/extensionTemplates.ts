@@ -12,10 +12,10 @@ const escapeXml = (str: string) =>
 const escapeCSharpString = (str: string) =>
   str.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r");
 
-export function getManifestTemplate(config: ExtensionConfig, projectName: string = "MyAIStudioExtension"): string {
+export function getManifestTemplate(config: ExtensionConfig, projectName: string = "visualstudioaibridge"): string {
   const safeName = escapeXml(config.extensionName);
   const safeAuthor = escapeXml(config.author);
-  const safeDesc = escapeXml(config.description || "Chatbot tool window for Visual Studio to connect with Google AI Studio.");
+  const safeDesc = escapeXml(config.description || "Chatbot tool window for Visual Studio powered by visualstudioaibridge.");
   const safeVersion = escapeXml(config.version);
 
   const isVs2026 = config.vsVersion === "2026";
@@ -24,12 +24,12 @@ export function getManifestTemplate(config: ExtensionConfig, projectName: string
   return `<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="GoogleAIStudio.ChatbotExtension.${safeAuthor.replace(/\s+/g, "")}" Version="${safeVersion}" Language="en-US" Publisher="${safeAuthor}" />
+    <Identity Id="VisualStudioAIBridge.Extension.${safeAuthor.replace(/\s+/g, "")}" Version="${safeVersion}" Language="en-US" Publisher="${safeAuthor}" />
     <DisplayName>${safeName}</DisplayName>
     <Description d:Concat="true">${safeDesc}</Description>
     <Icon>Resources\\ExtensionIcon.png</Icon>
     <PreviewImage>Resources\\ExtensionPreview.png</PreviewImage>
-    <Tags>ai, gemini, google, aistudio, chatbot, chat, refactor, code, helper</Tags>
+    <Tags>ai, gemini, google, visualstudioaibridge, chatbot, chat, refactor, code, helper</Tags>
   </Metadata>
   <Installation>
     <!-- Target Visual Studio 2022 (Version 17.0) and Visual Studio 2026 (Version 18.0/19.0) -->
@@ -55,7 +55,7 @@ export function getManifestTemplate(config: ExtensionConfig, projectName: string
 </PackageManifest>`;
 }
 
-export function getCsprojTemplate(config: ExtensionConfig, projectName: string = "MyAIStudioExtension"): string {
+export function getCsprojTemplate(config: ExtensionConfig, projectName: string = "visualstudioaibridge"): string {
   const isVs2026 = config.vsVersion === "2026";
   const toolsVersion = isVs2026 ? "Current" : "15.0";
   const minVsVersion = isVs2026 ? "18.0" : "17.0";
@@ -120,7 +120,7 @@ export function getCsprojTemplate(config: ExtensionConfig, projectName: string =
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Properties\\AssemblyInfo.cs" />
-    <Compile Include="MyAIStudioExtensionPackage.cs" />
+    <Compile Include="visualstudioaibridgePackage.cs" />
     <Compile Include="ChatWindow.cs" />
     <Compile Include="ChatWindowCommand.cs" />
     <Compile Include="ChatWindowControl.xaml.cs">
@@ -151,7 +151,7 @@ export function getCsprojTemplate(config: ExtensionConfig, projectName: string =
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.1264.42" />
   </ItemGroup>
   <ItemGroup>
-    <VSCTCompile Include="MyAIStudioExtensionPackage.vsct">
+    <VSCTCompile Include="visualstudioaibridgePackage.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>
     <Resource Include="Resources\\ExtensionIcon.png" />
@@ -185,9 +185,9 @@ export function getPackageVsctTemplate(config: ExtensionConfig): string {
   <Extern href="stdidcmd.h"/>
   <Extern href="vsshlids.h"/>
 
-  <Commands package="guidMyAIStudioExtensionPackage">
+  <Commands package="guidvisualstudioaibridgePackage">
     <Buttons>
-      <Button guid="guidMyAIStudioExtensionPackageCmdSet" id="ChatWindowCommandId" priority="0x0100" type="Button">
+      <Button guid="guidvisualstudioaibridgePackageCmdSet" id="ChatWindowCommandId" priority="0x0100" type="Button">
         <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTHRWNDWS1"/>
         <Icon guid="guidImages" id="bmpPic1" />
         <Strings>
@@ -201,8 +201,8 @@ export function getPackageVsctTemplate(config: ExtensionConfig): string {
   </Commands>
 
   <Symbols>
-    <GuidSymbol name="guidMyAIStudioExtensionPackage" value="{f5c6b907-8271-4688-9bb3-96b0153925fb}" />
-    <GuidSymbol name="guidMyAIStudioExtensionPackageCmdSet" value="{a5db0111-e490-449e-ba6b-c744fb86576b}">
+    <GuidSymbol name="guidvisualstudioaibridgePackage" value="{f5c6b907-8271-4688-9bb3-96b0153925fb}" />
+    <GuidSymbol name="guidvisualstudioaibridgePackageCmdSet" value="{a5db0111-e490-449e-ba6b-c744fb86576b}">
       <IDSymbol name="ChatWindowCommandId" value="0x0100" />
     </GuidSymbol>
     <GuidSymbol name="guidImages" value="{234913c3-1bf5-455b-9d41-15b744d5cf20}" >
@@ -220,13 +220,13 @@ using System.Threading;
 using Microsoft.VisualStudio.Shell;
 using Task = System.Threading.Tasks.Task;
 
-namespace MyAIStudioExtension
+namespace visualstudioaibridge
 {
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
-    [Guid(MyAIStudioExtensionPackage.PackageGuidString)]
+    [Guid(visualstudioaibridgePackage.PackageGuidString)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(ChatWindow))]
-    public sealed class MyAIStudioExtensionPackage : AsyncPackage
+    public sealed class visualstudioaibridgePackage : AsyncPackage
     {
         public const string PackageGuidString = "f5c6b907-8271-4688-9bb3-96b0153925fb";
 
@@ -244,7 +244,7 @@ export function getChatWindowTemplate(config: ExtensionConfig): string {
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
 
-namespace MyAIStudioExtension
+namespace visualstudioaibridge
 {
     [Guid("43b174b5-df3e-4632-a392-aa2e3cd83cc3")]
     public class ChatWindow : ToolWindowPane
@@ -265,7 +265,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
 
-namespace MyAIStudioExtension
+namespace visualstudioaibridge
 {
     internal sealed class ChatWindowCommand
     {
@@ -312,7 +312,7 @@ namespace MyAIStudioExtension
 }
 
 export function getChatWindowControlXamlTemplate(): string {
-  return `<UserControl x:Class="MyAIStudioExtension.ChatWindowControl"
+  return `<UserControl x:Class="visualstudioaibridge.ChatWindowControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -351,7 +351,7 @@ using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 
-namespace MyAIStudioExtension
+namespace visualstudioaibridge
 {
     public partial class ChatWindowControl : UserControl
     {
@@ -373,7 +373,7 @@ namespace MyAIStudioExtension
             {
                 string userDataFolder = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "AIStudioChatbot",
+                    "visualstudioaibridge",
                     "WebView2Data"
                 );
                 Directory.CreateDirectory(userDataFolder);
@@ -694,7 +694,7 @@ export function getWebviewHtmlTemplate(config: ExtensionConfig): string {
             VS
           </div>
           <div>
-            <h2 class="text-base font-bold tracking-tight">Visual Studio AI Chatbot Gateway</h2>
+            <h2 class="text-base font-bold tracking-tight">visualstudioaibridge Gateway</h2>
             <p class="text-xs text-indigo-100">Sign in with Google Account &amp; Select AI Supporting Channel</p>
           </div>
         </div>
@@ -1549,7 +1549,7 @@ namespace CodeOptimizer
 export function getReadmeTemplate(config: ExtensionConfig): string {
   return `# ${config.extensionName} - Visual Studio Extension Boilerplate
 
-This extension adds a docked chatbot tool window to **Visual Studio 2022 / 2026 Community, Professional, or Enterprise** which connects to your Google AI Studio account.
+This extension adds a docked chatbot tool window to **Visual Studio 2022 / 2026 Community, Professional, or Enterprise** powered by **visualstudioaibridge**.
 
 ## Features
 - **Direct AI Studio Integration**: Securely connect using your personal Gemini API key.
@@ -1580,7 +1580,7 @@ This is because your Visual Studio installation is **missing the Extension SDK t
 ## How to Build and Run
 
 1. **Extract** the files from this downloaded zip package to a directory of your choice.
-2. **Open the Solution**: Launch Visual Studio and open \`aistudiochatbotintegrator.sln\` (or \`aistudiochatbotintegrator.csproj\`).
+2. **Open the Solution**: Launch Visual Studio and open \`visualstudioaibridge.sln\` (or \`visualstudioaibridge.csproj\`).
 3. **Restore Packages**: Visual Studio will automatically download NuGet dependencies:
    - \`Microsoft.VisualStudio.SDK\`
    - \`Microsoft.VSSDK.BuildTools\`
@@ -1603,14 +1603,14 @@ This is because your Visual Studio installation is **missing the Extension SDK t
 1. In your primary Visual Studio solution window, switch your build configuration from **Debug** to **Release**.
 2. Go to **Build > Build Solution**.
 3. Locate the compiled \`.vsix\` installer file at:
-   \`\\bin\\Release\\aistudiochatbotintegrator.vsix\`
-4. Double-click the \`aistudiochatbotintegrator.vsix\` file. This opens the VSIX Installer.
+   \`\\bin\\Release\\visualstudioaibridge.vsix\`
+4. Double-click the \`visualstudioaibridge.vsix\` file. This opens the VSIX Installer.
 5. Choose your target IDE instance (e.g., Visual Studio 2026 Community) and click **Modify**.
 6. Restart Visual Studio. The tool window will now be permanently installed in your primary IDE!
 `;
 }
 
-export function getSlnTemplate(config: ExtensionConfig, projectName: string = "MyAIStudioExtension", csprojFileName: string = "MyAIStudioExtension.csproj"): string {
+export function getSlnTemplate(config: ExtensionConfig, projectName: string = "visualstudioaibridge", csprojFileName: string = "visualstudioaibridge.csproj"): string {
   const isVs2026 = config.vsVersion === "2026";
   const versionHeader = isVs2026 ? "18" : "17";
   const vsVersionStr = isVs2026 ? "18.0.35012.112" : "17.0.31903.59";

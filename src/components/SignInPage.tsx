@@ -105,7 +105,7 @@ export default function SignInPage({ onSignIn, currentSession }: Props) {
           </div>
           <div>
             <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              Visual Studio AI Chatbot Integrator
+              visualstudioaibridge
               <span className="text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-900 px-2 py-0.5 rounded">
                 Multi-Channel Gateway
               </span>

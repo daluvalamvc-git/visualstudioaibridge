@@ -311,37 +311,7 @@ export default function SignInPage({ onSignIn, currentSession }: Props) {
               </div>
 
               {/* Optional Custom API Key or Custom Endpoint Field */}
-              {selectedChannel.requiresApiKey ? (
-                <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1.5 flex items-center justify-between">
-                    <span>{selectedChannel.name} API Key (Optional)</span>
-                    <a
-                      href={selectedChannel.docUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] text-indigo-400 hover:underline flex items-center space-x-1"
-                    >
-                      <span>Get Free API Key</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-500">
-                      <Key className="w-4 h-4" />
-                    </div>
-                    <input
-                      type="password"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      placeholder={`Paste your ${selectedChannel.name} API key or leave blank for default proxy`}
-                      className="w-full bg-gray-950 text-gray-100 border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-xs focus:outline-none focus:border-indigo-500 font-mono"
-                    />
-                  </div>
-                  <p className="text-[10px] text-gray-500 mt-1">
-                    Leave empty to run using standard developer sandbox proxy mode.
-                  </p>
-                </div>
-              ) : selectedChannel.id === "ollama" ? (
+              {selectedChannel.id === "ollama" ? (
                 <div>
                   <label className="block text-xs font-medium text-gray-300 mb-1.5">Local Host Endpoint URL</label>
                   <input
@@ -356,11 +326,34 @@ export default function SignInPage({ onSignIn, currentSession }: Props) {
                   </p>
                 </div>
               ) : (
-                <div className="bg-indigo-950/30 border border-indigo-900/60 rounded-xl p-3 text-xs text-indigo-200 flex items-center space-x-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>
-                    Google AI Studio is built directly into server-side GenAI proxy. No API key needed to test immediately!
-                  </span>
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1.5 flex items-center justify-between">
+                    <span>{selectedChannel.name} API Key (Optional)</span>
+                    <a
+                      href={selectedChannel.docUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-indigo-400 hover:underline flex items-center space-x-1"
+                    >
+                      <span>Get API Key</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-500">
+                      <Key className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder={`Paste your ${selectedChannel.name} key or leave blank for free developer proxy`}
+                      className="w-full bg-gray-950 text-gray-100 border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-xs focus:outline-none focus:border-indigo-500 font-mono"
+                    />
+                  </div>
+                  <p className="text-[10px] text-emerald-400 mt-1">
+                    ✨ Leave blank to use free developer proxy mode — no paid subscription required!
+                  </p>
                 </div>
               )}
 

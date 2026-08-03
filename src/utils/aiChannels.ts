@@ -27,9 +27,9 @@ export const AI_CHANNELS: AIChannel[] = [
     description: "Full-stack developer AI workspace channel designed for automatic full-app generation and C# / React integrations.",
     badge: "Free Developer Tier",
     badgeColor: "bg-emerald-950 text-emerald-300 border-emerald-800",
-    requiresApiKey: true,
+    requiresApiKey: false,
     docUrl: "https://base44.io",
-    features: ["Instant Code Generation", "Full-Stack Project Sync", "AST Refactoring", "Free API Tier"]
+    features: ["Instant Code Generation", "Full-Stack Project Sync", "AST Refactoring", "Free Developer Proxy"]
   },
   {
     id: "replit",
@@ -42,7 +42,7 @@ export const AI_CHANNELS: AIChannel[] = [
     description: "Cloud IDE & Agent integration supporting remote execution, live debugging, and multi-file code editing.",
     badge: "Free Community",
     badgeColor: "bg-amber-950 text-amber-300 border-amber-800",
-    requiresApiKey: true,
+    requiresApiKey: false,
     docUrl: "https://replit.com",
     features: ["Cloud REPL Sandbox", "Multi-language Support", "Auto-debugging", "Real-time Terminal Output"]
   },
@@ -57,7 +57,7 @@ export const AI_CHANNELS: AIChannel[] = [
     description: "Vercel's unified AI SDK bridge & v0 generative component engine for high-speed UI and API code generation.",
     badge: "Free Hobby Tier",
     badgeColor: "bg-slate-900 text-gray-200 border-gray-700",
-    requiresApiKey: true,
+    requiresApiKey: false,
     docUrl: "https://vercel.com/ai",
     features: ["Vercel AI SDK Integration", "Edge Proxy Streaming", "React & Component Logic", "Hobby Gateway"]
   },
@@ -72,7 +72,7 @@ export const AI_CHANNELS: AIChannel[] = [
     description: "Generative UI and full-stack software development engine tuned for responsive layouts and clean C#/TS code.",
     badge: "Free Creator Tier",
     badgeColor: "bg-rose-950 text-rose-300 border-rose-800",
-    requiresApiKey: true,
+    requiresApiKey: false,
     docUrl: "https://lovable.dev",
     features: ["Visual-to-Code Synthesis", "Clean Component Architecture", "Free Monthly Credits", "IDE Extension Plugin"]
   },
@@ -87,7 +87,7 @@ export const AI_CHANNELS: AIChannel[] = [
     description: "Ultra-high speed LPU inference API providing up to 800 tokens/sec. 100% free daily rate limits for developers.",
     badge: "100% Free API • 800 tok/s",
     badgeColor: "bg-orange-950 text-orange-300 border-orange-800",
-    requiresApiKey: true,
+    requiresApiKey: false,
     docUrl: "https://console.groq.com",
     features: ["Instant Response Speed", "Llama 3.3 70B & DeepSeek R1", "OpenAI Compatible API", "1440 Requests / Day Free"]
   },
@@ -102,7 +102,7 @@ export const AI_CHANNELS: AIChannel[] = [
     description: "Unified router providing access to dozens of top open-weights models with unlimited free model endpoints.",
     badge: "Dozens of Free Models",
     badgeColor: "bg-cyan-950 text-cyan-300 border-cyan-800",
-    requiresApiKey: true,
+    requiresApiKey: false,
     docUrl: "https://openrouter.ai",
     features: ["DeepSeek R1 Free", "Qwen Coder 32B", "Unified Endpoint", "Zero Rate Limit Fallbacks"]
   },
@@ -117,7 +117,7 @@ export const AI_CHANNELS: AIChannel[] = [
     description: "Open community hub powering serverless inference for thousands of fine-tuned open source coding models.",
     badge: "Serverless Free Tier",
     badgeColor: "bg-yellow-950 text-yellow-300 border-yellow-800",
-    requiresApiKey: true,
+    requiresApiKey: false,
     docUrl: "https://huggingface.co",
     features: ["Free Community API Key", "Fine-tuned Code LLMs", "Open Weights Hub", "Custom Model Uploads"]
   },
@@ -132,7 +132,7 @@ export const AI_CHANNELS: AIChannel[] = [
     description: "Fast cloud inference platform for open-source AI models with starter developer credits.",
     badge: "Free Starter Credits",
     badgeColor: "bg-purple-950 text-purple-300 border-purple-800",
-    requiresApiKey: true,
+    requiresApiKey: false,
     docUrl: "https://together.ai",
     features: ["Fast Streaming API", "CodeLlama & Mixtral", "Sub-second Latency", "Starter Credits"]
   },
@@ -147,7 +147,7 @@ export const AI_CHANNELS: AIChannel[] = [
     description: "Dedicated coding model platform featuring Codestral, specifically optimized for 80+ programming languages including C# and C++.",
     badge: "Codestral Free Tier",
     badgeColor: "bg-red-950 text-red-300 border-red-800",
-    requiresApiKey: true,
+    requiresApiKey: false,
     docUrl: "https://mistral.ai",
     features: ["Codestral 80+ Languages", "Fill-in-the-Middle (FIM)", "Fast Code Completion", "Developer Tier"]
   },

@@ -8,13 +8,16 @@ import {
   Check, RefreshCw, X, Eraser, Info, ArrowUpRight,
   Terminal, AlertCircle, LogOut, Cpu, Zap, CreditCard,
   PlusCircle, BarChart2, ShieldCheck, Sliders, Key,
-  Eye, Copy, FileText, Layers, MessageSquare
+  Eye, Copy, FileText, Layers, MessageSquare, Camera, Image as ImageIcon
 } from "lucide-react";
+import SolutionFileManager from "./SolutionFileManager";
 
 interface Props {
   config: ExtensionConfig;
   session?: UserSession | null;
   onChangeChannel?: () => void;
+  activeMainTab?: "simulator" | "files";
+  onTabChange?: (tab: "simulator" | "files") => void;
 }
 
 const DEFAULT_EDITOR_FILES: EditorFile[] = [
@@ -121,10 +124,22 @@ namespace MyApp.Controllers
   }
 ];
 
-export default function VS2026Simulator({ config, session, onChangeChannel }: Props) {
+export default function VS2026Simulator({ config, session, onChangeChannel, activeMainTab = "simulator", onTabChange }: Props) {
   const channelName = session?.selectedChannel.name || "Google AI Studio";
   const channelModel = session?.selectedChannel.defaultModel || config.defaultModel;
   const username = session?.username || "daluvalanokia@gmail.com";
+
+  const [editorViewMode, setEditorViewMode] = useState<"code" | "files-registry">(
+    activeMainTab === "files" ? "files-registry" : "code"
+  );
+
+  useEffect(() => {
+    if (activeMainTab === "files") {
+      setEditorViewMode("files-registry");
+    } else if (activeMainTab === "simulator") {
+      setEditorViewMode("code");
+    }
+  }, [activeMainTab]);
 
   const [files, setFiles] = useState<EditorFile[]>(DEFAULT_EDITOR_FILES);
   const [activeFileIndex, setActiveFileIndex] = useState(0);
@@ -687,6 +702,17 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
             title="Solution Explorer"
           >
             <Folder className="w-5 h-5" />
+          </button>
+
+          <button 
+            onClick={() => {
+              setEditorViewMode("files-registry");
+              if (onTabChange) onTabChange("files");
+            }}
+            className={`p-2 rounded transition ${editorViewMode === "files-registry" ? "bg-[#2D2D30] text-amber-400 border-l-2 border-amber-500" : "hover:bg-[#2D2D30] hover:text-white"}`}
+            title="Solution Photos & Files Registry"
+          >
+            <Camera className="w-5 h-5 text-amber-400" />
           </button>
         </div>
 

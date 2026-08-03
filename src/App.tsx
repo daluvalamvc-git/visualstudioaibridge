@@ -146,45 +146,45 @@ export default function App() {
       </div>
 
       {/* Main Tab Workspace Content */}
-      {mainLandingTab === "simulator" ? (
-        <main className="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 p-6 overflow-hidden min-h-0">
-          {/* Left Configurator Column */}
-          <div className="xl:col-span-5 h-full flex flex-col min-h-0">
-            <ExtensionConfigurator config={config} onChange={setConfig} />
-          </div>
+      <main className="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 p-6 overflow-hidden min-h-0">
+        {/* Left Configurator Column */}
+        <div className="xl:col-span-5 h-full flex flex-col min-h-0">
+          <ExtensionConfigurator config={config} onChange={setConfig} />
+        </div>
 
-          {/* Right VS 2026 Simulator Column */}
-          <div className="xl:col-span-7 h-full flex flex-col min-h-0">
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl flex flex-col h-full">
-              {/* Header tab for simulator */}
-              <div className="bg-gray-950 px-5 py-4 border-b border-gray-800 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Terminal className="w-5 h-5 text-indigo-400" />
-                  <h3 className="font-semibold text-gray-100 text-base">Live IDE Extension Simulator</h3>
-                </div>
-                <span className="text-xs font-mono text-indigo-300 bg-indigo-950 px-2 py-0.5 rounded border border-indigo-900">
-                  Connected to {session.selectedChannel.name}
-                </span>
+        {/* Right VS 2026 Simulator Column */}
+        <div className="xl:col-span-7 h-full flex flex-col min-h-0">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl flex flex-col h-full">
+            {/* Header tab for simulator */}
+            <div className="bg-gray-950 px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Terminal className="w-5 h-5 text-indigo-400" />
+                <h3 className="font-semibold text-gray-100 text-base">Live IDE Extension Simulator &amp; AI Chatbot Integrator</h3>
               </div>
+              <span className="text-xs font-mono text-indigo-300 bg-indigo-950 px-2 py-0.5 rounded border border-indigo-900">
+                Connected to {session.selectedChannel.name}
+              </span>
+            </div>
 
-              {/* Quick Helper Tip */}
-              <div className="bg-indigo-950 bg-opacity-30 border-b border-indigo-900 p-3 text-xs text-indigo-200 flex items-center space-x-2">
-                <span className="bg-indigo-900 text-indigo-300 font-bold px-1.5 py-0.5 rounded text-[10px]">INSTRUCTIONS</span>
-                <span>Select code inside the file editor below (e.g., highlight the BubbleSort buggy code), and click one of your custom commands on the right!</span>
-              </div>
+            {/* Quick Helper Tip */}
+            <div className="bg-indigo-950 bg-opacity-30 border-b border-indigo-900 p-3 text-xs text-indigo-200 flex items-center space-x-2">
+              <span className="bg-indigo-900 text-indigo-300 font-bold px-1.5 py-0.5 rounded text-[10px]">INSTRUCTIONS</span>
+              <span>Type prompts or slash commands in the AI Chatbot Integrator panel on the right. Requests and AI responses are displayed directly in the panel!</span>
+            </div>
 
-              {/* The actual high fidelity simulator component */}
-              <div className="flex-1 min-h-0 p-4 bg-gray-950">
-                <VS2026Simulator config={config} session={session} onChangeChannel={handleSignOut} />
-              </div>
+            {/* The actual high fidelity simulator component */}
+            <div className="flex-1 min-h-0 p-4 bg-gray-950">
+              <VS2026Simulator 
+                config={config} 
+                session={session} 
+                onChangeChannel={handleSignOut}
+                activeMainTab={mainLandingTab}
+                onTabChange={setMainLandingTab}
+              />
             </div>
           </div>
-        </main>
-      ) : (
-        <main className="flex-1 p-6 overflow-hidden min-h-0">
-          <SolutionFileManager />
-        </main>
-      )}
+        </div>
+      </main>
 
       {/* Quick Start & Installation Guide */}
       <section className="bg-gray-900 border-t border-gray-800 p-8 shrink-0" id="quick-start-guide">

@@ -395,7 +395,8 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
         body: JSON.stringify({
           messages: [{ role: "user", content: finalPrompt }],
           systemPrompt: config.systemPrompt,
-          model: config.defaultModel
+          model: session?.selectedChannel.defaultModel || config.defaultModel,
+          channelId: session?.selectedChannel.id || "aistudio"
         })
       });
 

@@ -962,10 +962,17 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
                 <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
                 <span className="font-semibold text-xs">{config.extensionName}</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <button onClick={clearChat} className="text-gray-500 hover:text-gray-300 p-0.5 rounded" title="Clear Chat Log">
-                  <Eraser className="w-3.5 h-3.5" />
+              <div className="flex items-center space-x-1.5">
+                <button onClick={clearChat} className="bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-[10px] flex items-center space-x-1 transition font-medium cursor-pointer" title="Clear or Refresh Chat Log">
+                  <Eraser className="w-3 h-3 text-amber-400" />
+                  <span>Clear</span>
                 </button>
+                {onChangeChannel && (
+                  <button onClick={onChangeChannel} className="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 px-2 py-0.5 rounded text-[10px] flex items-center space-x-1 transition font-semibold cursor-pointer" title="Sign Out of AI Provider / Switch Channel">
+                    <LogOut className="w-3 h-3 text-rose-400" />
+                    <span>Sign Out</span>
+                  </button>
+                )}
                 <span className="text-[10px] bg-indigo-950 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-900 font-mono">
                   {config.defaultModel}
                 </span>
@@ -1080,9 +1087,11 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
                     {onChangeChannel && (
                       <button
                         onClick={onChangeChannel}
-                        className="text-gray-400 hover:text-white underline text-[9.5px]"
+                        className="bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-800 px-2 py-1 rounded text-[10px] flex items-center space-x-1 transition font-bold shadow-2xs cursor-pointer"
+                        title="Sign Out of current AI Provider or switch supporting channel"
                       >
-                        Switch Channel
+                        <LogOut className="w-3 h-3 text-rose-400" />
+                        <span>Sign Out / Switch Provider</span>
                       </button>
                     )}
                   </div>
@@ -1226,6 +1235,24 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
                   <Folder className="w-3 h-3 text-indigo-400" />
                   <span>Read Solution</span>
                 </button>
+                <button
+                  onClick={clearChat}
+                  className="flex items-center space-x-1 px-1.5 py-0.5 rounded border border-amber-900/70 bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 transition text-[10px] font-medium cursor-pointer"
+                  title="Clear or Refresh Chat History"
+                >
+                  <Eraser className="w-3 h-3 text-amber-400" />
+                  <span>Clear Chat</span>
+                </button>
+                {onChangeChannel && (
+                  <button
+                    onClick={onChangeChannel}
+                    className="flex items-center space-x-1 px-1.5 py-0.5 rounded border border-rose-900/70 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 transition text-[10px] font-semibold cursor-pointer"
+                    title="Sign Out of AI Provider / Switch Channel"
+                  >
+                    <LogOut className="w-3 h-3 text-rose-400" />
+                    <span>Sign Out</span>
+                  </button>
+                )}
               </div>
               <div className="text-[9px] text-gray-500 font-mono truncate italic">
                 Cost: -{credits.costPerPrompt} Cr

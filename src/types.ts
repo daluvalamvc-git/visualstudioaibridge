@@ -72,8 +72,9 @@ export interface UserSession {
 export interface SolutionFile {
   id: string; // File ID
   name: string; // File Name
+  size: string; // File Size
+  filePath: string; // File Path
   uploadedTime: string; // Formatted Uploaded Time
-  size?: string;
   type?: string;
   previewUrl?: string;
 }

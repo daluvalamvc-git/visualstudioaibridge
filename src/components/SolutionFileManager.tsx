@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { SolutionFile } from "../types";
 import { 
   Folder, Image as ImageIcon, Upload, Trash2, Plus, Search, 
-  FileText, CheckCircle2, Eye, X, HardDrive, Grid, ListFilter
+  FileText, CheckCircle2, Eye, X, HardDrive, Grid, ListFilter,
+  Camera, Sparkles, MapPin, Calendar, HardDriveUpload
 } from "lucide-react";
 
 const INITIAL_FILES: SolutionFile[] = [
@@ -44,9 +45,9 @@ const INITIAL_FILES: SolutionFile[] = [
 ];
 
 export default function SolutionFileManager() {
-  const [activeTab, setActiveTab] = useState<"browse" | "list" | "upload">("list");
+  const [activeTab, setActiveTab] = useState<"browse" | "list" | "memories" | "upload">("memories");
   const [files, setFiles] = useState<SolutionFile[]>(() => {
-    const saved = localStorage.getItem("VS2026_SOLUTION_FILES_V2");
+    const saved = localStorage.getItem("VS2026_SOLUTION_FILES_V3");
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { return INITIAL_FILES; }
     }
@@ -62,11 +63,13 @@ export default function SolutionFileManager() {
   const [customFileName, setCustomFileName] = useState("");
   const [customFilePath, setCustomFilePath] = useState("");
   const [customPhotoUrl, setCustomPhotoUrl] = useState("");
+  const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    localStorage.setItem("VS2026_SOLUTION_FILES_V2", JSON.stringify(files));
+    localStorage.setItem("VS2026_SOLUTION_FILES_V3", JSON.stringify(files));
   }, [files]);
 
   const showToast = (msg: string) => {
@@ -88,7 +91,7 @@ export default function SolutionFileManager() {
         String(now.getSeconds()).padStart(2, '0');
 
       const fileId = "FID-" + Math.floor(10000 + Math.random() * 90000);
-      const filePath = `/workspace/DevWorkspace/Uploads/${file.name}`;
+      const filePath = `/workspace/DevWorkspace/Memories/${file.name}`;
       const fileSize = (file.size / 1024).toFixed(0) + " KB";
 
       const reader = new FileReader();
@@ -99,7 +102,7 @@ export default function SolutionFileManager() {
           size: fileSize,
           filePath,
           uploadedTime: formattedTime,
-          type: file.type || "application/octet-stream",
+          type: file.type || "image/png",
           previewUrl: event.target?.result as string || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80"
         };
         setFiles(prev => [newFile, ...prev]);
@@ -107,23 +110,31 @@ export default function SolutionFileManager() {
       reader.readAsDataURL(file);
     });
 
-    showToast(`Successfully uploaded ${count} file(s) to registry.`);
-    setActiveTab("list");
+    showToast(`Uploaded ${count} new photo/file(s) to Memories!`);
+    setShowPhotoUploadModal(false);
   };
 
   const handleAddCustomFile = (e: React.FormEvent) => {
     e.preventDefault();
-    const name = customFileName.trim() || "solution_asset_" + Math.floor(1000 + Math.random() * 9000) + ".png";
-    const path = customFilePath.trim() || `/workspace/DevWorkspace/Uploads/${name}`;
+    const name = customFileName.trim() || "memory_photo_" + Math.floor(1000 + Math.random() * 9000) + ".jpg";
+    const path = customFilePath.trim() || `/workspace/DevWorkspace/Memories/${name}`;
     const fileId = "FID-" + Math.floor(10000 + Math.random() * 90000);
+
+    const now = new Date();
+    const formattedTime = now.getFullYear() + "-" + 
+      String(now.getMonth() + 1).padStart(2, '0') + "-" + 
+      String(now.getDate()).padStart(2, '0') + " " + 
+      String(now.getHours()).padStart(2, '0') + ":" + 
+      String(now.getMinutes()).padStart(2, '0') + ":" + 
+      String(now.getSeconds()).padStart(2, '0');
 
     const newFile: SolutionFile = {
       id: fileId,
       name,
-      size: "420 KB",
+      size: "650 KB",
       filePath: path,
-      uploadedTime: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      type: "image/png",
+      uploadedTime: formattedTime,
+      type: "image/jpeg",
       previewUrl: customPhotoUrl.trim() || "https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&w=600&q=80"
     };
 
@@ -131,14 +142,14 @@ export default function SolutionFileManager() {
     setCustomFileName("");
     setCustomFilePath("");
     setCustomPhotoUrl("");
-    showToast(`Added file '${name}' (ID: ${fileId})!`);
-    setActiveTab("list");
+    setShowPhotoUploadModal(false);
+    showToast(`Added memory photo '${name}' (ID: ${fileId})!`);
   };
 
   const handleDeleteFile = (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete '${name}' (ID: ${id})?`)) {
       setFiles(prev => prev.filter(f => f.id !== id));
-      showToast(`Deleted file '${name}'.`);
+      showToast(`Deleted '${name}' from Memories.`);
     }
   };
 
@@ -150,7 +161,7 @@ export default function SolutionFileManager() {
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl flex flex-col h-full">
-      {/* Header Bar */}
+      {/* Header Bar with Tabs */}
       <div className="bg-gray-950 px-6 py-4 border-b border-gray-800 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
           <div className="w-9 h-9 bg-indigo-950 border border-indigo-800 rounded-lg flex items-center justify-center text-indigo-400">
@@ -158,16 +169,16 @@ export default function SolutionFileManager() {
           </div>
           <div>
             <h3 className="font-bold text-gray-100 text-base flex items-center gap-2">
-              Solution Files &amp; Assets Registry
+              Solution Files &amp; Memories Registry
               <span className="text-[10px] bg-indigo-950 text-indigo-300 font-mono px-2 py-0.5 rounded border border-indigo-900 font-semibold">
-                {files.length} Files Uploaded
+                {files.length} Saved
               </span>
             </h3>
-            <p className="text-xs text-gray-400">Browse solution files, view detailed file tables, and upload new photos or documents.</p>
+            <p className="text-xs text-gray-400">Manage solution assets, upload memory photos, and view file location tables.</p>
           </div>
         </div>
 
-        {/* 3 Main Navigation Tabs: Browse | File List | Upload File */}
+        {/* 4 Navigation Tabs: Browse | File List | Memories | Upload File */}
         <div className="flex items-center bg-gray-900 p-1 rounded-xl border border-gray-800 space-x-1">
           <button
             onClick={() => setActiveTab("browse")}
@@ -191,6 +202,19 @@ export default function SolutionFileManager() {
           >
             <ListFilter className="w-3.5 h-3.5 text-indigo-300" />
             <span>File List</span>
+          </button>
+
+          {/* NEW REQUESTED TAB: MEMORIES */}
+          <button
+            onClick={() => setActiveTab("memories")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer ${
+              activeTab === "memories" 
+                ? "bg-indigo-600 text-white shadow-md font-bold" 
+                : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+            }`}
+          >
+            <Camera className="w-3.5 h-3.5 text-indigo-300" />
+            <span>Memories</span>
           </button>
 
           <button
@@ -220,10 +244,176 @@ export default function SolutionFileManager() {
         </div>
       )}
 
-      {/* Main Workspace Body */}
+      {/* Main Content Body */}
       <div className="flex-1 p-6 overflow-y-auto min-h-0 bg-gray-950">
 
-        {/* TAB 1: BROWSE (Grid View) */}
+        {/* TAB 1: MEMORIES (Requested Tab) */}
+        {activeTab === "memories" && (
+          <div className="space-y-5 animate-fade-in">
+            {/* Memories Action Header Banner */}
+            <div className="bg-gradient-to-r from-gray-900 via-indigo-950 to-gray-900 border border-gray-800 rounded-xl p-5 flex flex-wrap items-center justify-between gap-4 shadow-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-indigo-900/60 border border-indigo-700/80 rounded-xl flex items-center justify-center text-indigo-300 shadow-md">
+                  <Camera className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-100 text-sm flex items-center gap-2">
+                    Photo Memories &amp; Solution Snapshots
+                    <span className="text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-900 px-2 py-0.5 rounded-full font-mono">
+                      {filteredFiles.length} Items
+                    </span>
+                  </h4>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Store and view your project photos, diagrams, and solution memory logs.
+                  </p>
+                </div>
+              </div>
+
+              {/* Option to Upload New Photos */}
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setShowPhotoUploadModal(true)}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-md flex items-center space-x-2 cursor-pointer"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Upload New Photos</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Search Bar */}
+            <div className="flex items-center justify-between bg-gray-900 p-3 rounded-xl border border-gray-800">
+              <div className="relative w-full sm:w-96">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-500" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search Memory File ID, Name, or File Location..."
+                  className="w-full bg-gray-950 border border-gray-800 text-gray-200 text-xs rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+              <span className="text-xs text-gray-500 hidden sm:inline font-mono">
+                Memory Storage Registry
+              </span>
+            </div>
+
+            {/* Requested Table with Columns: File ID | File Name | File Size | File Location | Date Uploaded | Delete Button */}
+            <div className="border border-gray-800 rounded-xl overflow-hidden shadow-xl bg-gray-900">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-gray-300">
+                  <thead className="bg-gray-950 text-gray-400 font-mono uppercase text-[11px] tracking-wider border-b border-gray-800">
+                    <tr>
+                      <th scope="col" className="py-3.5 px-4 font-semibold">File ID</th>
+                      <th scope="col" className="py-3.5 px-4 font-semibold">File Name</th>
+                      <th scope="col" className="py-3.5 px-4 font-semibold">File Size</th>
+                      <th scope="col" className="py-3.5 px-4 font-semibold">File Location</th>
+                      <th scope="col" className="py-3.5 px-4 font-semibold">Date Uploaded</th>
+                      <th scope="col" className="py-3.5 px-4 font-semibold text-right">Delete Button</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800/60 font-sans">
+                    {filteredFiles.length > 0 ? (
+                      filteredFiles.map((file) => (
+                        <tr key={file.id} className="hover:bg-gray-850 transition group">
+                          {/* Column 1: File ID */}
+                          <td className="py-3.5 px-4 font-mono">
+                            <span className="bg-indigo-950 text-indigo-300 border border-indigo-900/80 px-2.5 py-1 rounded-md text-[11px] font-bold">
+                              {file.id}
+                            </span>
+                          </td>
+
+                          {/* Column 2: File Name */}
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center space-x-3">
+                              {file.previewUrl ? (
+                                <img 
+                                  src={file.previewUrl} 
+                                  alt={file.name} 
+                                  className="w-9 h-9 rounded-lg object-cover border border-gray-700 shrink-0 cursor-pointer hover:border-indigo-500 transition"
+                                  onClick={() => setPreviewFile(file)}
+                                />
+                              ) : (
+                                <div className="w-9 h-9 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center shrink-0">
+                                  <ImageIcon className="w-4 h-4 text-gray-400" />
+                                </div>
+                              )}
+                              <div>
+                                <span 
+                                  className="font-semibold text-gray-100 group-hover:text-indigo-400 transition cursor-pointer block"
+                                  onClick={() => setPreviewFile(file)}
+                                >
+                                  {file.name}
+                                </span>
+                                <span className="text-[10px] text-gray-500 font-mono">
+                                  {file.type || "image/png"}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Column 3: File Size */}
+                          <td className="py-3.5 px-4 font-mono text-gray-300">
+                            {file.size}
+                          </td>
+
+                          {/* Column 4: File Location */}
+                          <td className="py-3.5 px-4 font-mono text-gray-400 text-[11px]">
+                            <span className="bg-gray-950 px-2.5 py-1 rounded-md border border-gray-800 flex items-center space-x-1 max-w-xs truncate" title={file.filePath}>
+                              <MapPin className="w-3 h-3 text-indigo-400 shrink-0" />
+                              <span className="truncate">{file.filePath}</span>
+                            </span>
+                          </td>
+
+                          {/* Column 5: Date Uploaded */}
+                          <td className="py-3.5 px-4 font-mono text-gray-400 text-[11px]">
+                            <span className="flex items-center space-x-1">
+                              <Calendar className="w-3 h-3 text-gray-500" />
+                              <span>{file.uploadedTime}</span>
+                            </span>
+                          </td>
+
+                          {/* Column 6: Delete Button */}
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              {file.previewUrl && (
+                                <button
+                                  onClick={() => setPreviewFile(file)}
+                                  className="p-1.5 rounded-lg bg-gray-800 hover:bg-indigo-900 text-gray-400 hover:text-indigo-300 border border-gray-700 transition cursor-pointer"
+                                  title="View Photo Preview"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDeleteFile(file.id, file.name)}
+                                className="bg-rose-950/70 hover:bg-rose-900 border border-rose-800/80 text-rose-300 hover:text-white px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1.5 transition shadow-2xs cursor-pointer text-xs"
+                                title="Delete Photo Memory"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-gray-500">
+                          <Camera className="w-10 h-10 mx-auto text-gray-600 mb-2" />
+                          <p className="text-sm font-medium text-gray-400">No memory files found</p>
+                          <p className="text-xs mt-1">Click 'Upload New Photos' to add photos to your memory table.</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: BROWSE (Grid View) */}
         {activeTab === "browse" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between bg-gray-900 p-3 rounded-xl border border-gray-800">
@@ -239,7 +429,7 @@ export default function SolutionFileManager() {
               </div>
 
               <button
-                onClick={() => setActiveTab("upload")}
+                onClick={() => setShowPhotoUploadModal(true)}
                 className="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow-md cursor-pointer"
               >
                 <Upload className="w-3.5 h-3.5" />
@@ -296,10 +486,9 @@ export default function SolutionFileManager() {
           </div>
         )}
 
-        {/* TAB 2: FILE LIST (Table with requested columns: File ID, File Name, File Size, File Path, Delete Options) */}
+        {/* TAB 3: FILE LIST (Table View) */}
         {activeTab === "list" && (
           <div className="space-y-4">
-            {/* Search Bar */}
             <div className="flex items-center justify-between bg-gray-900 p-3 rounded-xl border border-gray-800">
               <div className="relative w-full sm:w-96">
                 <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-500" />
@@ -321,7 +510,6 @@ export default function SolutionFileManager() {
               </button>
             </div>
 
-            {/* Requested Table View */}
             <div className="border border-gray-800 rounded-xl overflow-hidden shadow-lg bg-gray-900">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs text-gray-300">
@@ -338,14 +526,12 @@ export default function SolutionFileManager() {
                     {filteredFiles.length > 0 ? (
                       filteredFiles.map((file) => (
                         <tr key={file.id} className="hover:bg-gray-850 transition group">
-                          {/* Column 1: File ID */}
                           <td className="py-3.5 px-4 font-mono">
                             <span className="bg-indigo-950 text-indigo-300 border border-indigo-900/80 px-2.5 py-1 rounded-md text-[11px] font-bold">
                               {file.id}
                             </span>
                           </td>
 
-                          {/* Column 2: File Name */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center space-x-3">
                               {file.previewUrl ? (
@@ -366,19 +552,16 @@ export default function SolutionFileManager() {
                             </div>
                           </td>
 
-                          {/* Column 3: File Size */}
                           <td className="py-3.5 px-4 font-mono text-gray-300">
                             {file.size}
                           </td>
 
-                          {/* Column 4: File Path */}
                           <td className="py-3.5 px-4 font-mono text-gray-400 text-[11px]">
                             <span className="bg-gray-950 px-2 py-0.5 rounded border border-gray-800">
                               {file.filePath}
                             </span>
                           </td>
 
-                          {/* Column 5: Delete Options */}
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end space-x-2">
                               {file.previewUrl && (
@@ -407,7 +590,6 @@ export default function SolutionFileManager() {
                         <td colSpan={5} className="py-12 text-center text-gray-500">
                           <Folder className="w-10 h-10 mx-auto text-gray-600 mb-2" />
                           <p className="text-sm font-medium text-gray-400">No solution files found</p>
-                          <p className="text-xs mt-1">Switch to 'Upload File' tab to add your first solution file.</p>
                         </td>
                       </tr>
                     )}
@@ -418,7 +600,7 @@ export default function SolutionFileManager() {
           </div>
         )}
 
-        {/* TAB 3: UPLOAD FILE (Next to Browse and File List) */}
+        {/* TAB 4: UPLOAD FILE */}
         {activeTab === "upload" && (
           <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
             <div className="bg-indigo-950/40 border border-indigo-900/60 rounded-xl p-4 text-xs text-indigo-200 flex items-start space-x-3">
@@ -426,7 +608,7 @@ export default function SolutionFileManager() {
               <div>
                 <h4 className="font-bold text-indigo-300">Upload Solution Files &amp; Assets</h4>
                 <p className="mt-1 text-indigo-300/80 leading-relaxed">
-                  Select files from your local device or specify custom file paths to register them directly in the solution file table.
+                  Select files from your device or specify custom file paths to register them directly in your file manager.
                 </p>
               </div>
             </div>
@@ -535,6 +717,104 @@ export default function SolutionFileManager() {
 
       </div>
 
+      {/* Upload Photo Modal Option */}
+      {showPhotoUploadModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-950 border border-indigo-800 flex items-center justify-center text-indigo-400">
+                  <Camera className="w-4 h-4" />
+                </div>
+                <h4 className="font-bold text-sm text-gray-100">Upload New Photo Memory</h4>
+              </div>
+              <button onClick={() => setShowPhotoUploadModal(false)} className="text-gray-400 hover:text-white cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Local File Selector */}
+            <div>
+              <input
+                type="file"
+                ref={photoInputRef}
+                onChange={handleFileUpload}
+                accept="image/*"
+                multiple
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl text-xs transition shadow-md flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Select Photos from Computer</span>
+              </button>
+            </div>
+
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-gray-800"></div>
+              <span className="flex-shrink mx-4 text-gray-500 text-[10px] uppercase font-mono">Or enter photo URL</span>
+              <div className="flex-grow border-t border-gray-800"></div>
+            </div>
+
+            <form onSubmit={handleAddCustomFile} className="space-y-3">
+              <div>
+                <label className="block text-[11px] text-gray-400 mb-1">Photo / File Name *</label>
+                <input
+                  type="text"
+                  value={customFileName}
+                  onChange={(e) => setCustomFileName(e.target.value)}
+                  placeholder="e.g. Memory_Snapshot_2026.jpg"
+                  required
+                  className="w-full bg-gray-950 border border-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] text-gray-400 mb-1">File Location Path</label>
+                <input
+                  type="text"
+                  value={customFilePath}
+                  onChange={(e) => setCustomFilePath(e.target.value)}
+                  placeholder="/workspace/DevWorkspace/Memories/..."
+                  className="w-full bg-gray-950 border border-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] text-gray-400 mb-1">Photo Image URL</label>
+                <input
+                  type="url"
+                  value={customPhotoUrl}
+                  onChange={(e) => setCustomPhotoUrl(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full bg-gray-950 border border-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPhotoUploadModal(false)}
+                  className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-5 py-2 rounded-xl text-xs transition shadow-md cursor-pointer flex items-center space-x-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Save Photo Memory</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Lightbox Preview Modal */}
       {previewFile && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
@@ -558,12 +838,12 @@ export default function SolutionFileManager() {
               {previewFile.previewUrl ? (
                 <img src={previewFile.previewUrl} alt={previewFile.name} className="max-h-[60vh] rounded-lg object-contain shadow-md" />
               ) : (
-                <div className="p-12 text-center text-gray-500 font-mono text-xs">No image preview for non-binary code file</div>
+                <div className="p-12 text-center text-gray-500 font-mono text-xs">No image preview available</div>
               )}
             </div>
 
             <div className="bg-gray-900 px-5 py-3 border-t border-gray-800 flex justify-between items-center">
-              <span className="text-xs text-gray-400 font-mono">Size: {previewFile.size}</span>
+              <span className="text-xs text-gray-400 font-mono">Size: {previewFile.size} | Uploaded: {previewFile.uploadedTime}</span>
               <button
                 onClick={() => setPreviewFile(null)}
                 className="bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer"

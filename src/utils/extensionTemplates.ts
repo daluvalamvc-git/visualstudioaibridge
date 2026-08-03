@@ -1606,12 +1606,9 @@ namespace CodeOptimizer
 
       // 5) High quality C# / Developer AI synthesis engine for Free Tiers / Fallbacks
       const rawText = synthesizeDeveloperResponse(fullPrompt, activeChan);
-      const nowTs = new Date().toISOString();
-      const tId = "TRACE-VS2026-" + Math.floor(100000 + Math.random() * 900000);
-      const traceBlock = "\\n\\n---\\n### 🔍 Diagnostic Trace & Execution Log\\n\\n| Diagnostic Metric | Telemetry Detail |\\n| :--- | :--- |\\n| **Channel Gateway** | \\\`" + activeChan.name + " (" + activeChan.id + ")\\\` |\\n| **Execution ID** | \\\`" + tId + "\\\` |\\n| **Timestamp** | \\\`" + nowTs + "\\\` |\\n| **Target File** | \\\`CustomSolutionService.cs\\\` |\\n| **Compiler Status** | \\\`Zero syntax errors (Clean Compilation)\\\` |\\n| **AST Fix Status** | \\\`Synthesized C# implementation for prompt\\\` |\\n\\n\`\`\`text\\n[TRACE " + nowTs.substring(11, 19) + "] Visual Studio Extension bridge received request.\\n[TRACE " + nowTs.substring(11, 19) + "] Channel route: " + activeChan.name + " (" + activeChan.id + "). Proxy active.\\n[TRACE " + nowTs.substring(11, 19) + "] Parsed prompt topic & synthesized AST solution.\\n[TRACE " + nowTs.substring(11, 19) + "] Code patch generated with zero syntax errors.\\n\`\`\`";
 
       typingDiv.remove();
-      addMessage('assistant', rawText + traceBlock);
+      addMessage('assistant', rawText);
     }
 
     function synthesizeDeveloperResponse(promptText, channel) {

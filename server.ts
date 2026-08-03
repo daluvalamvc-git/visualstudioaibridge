@@ -451,29 +451,7 @@ namespace DevWorkspace
 Click **Insert Code into Editor** or copy the snippet above to apply it to your Visual Studio project!`;
   }
 
-  const traceLog = `
-
----
-### 🔍 Diagnostic Trace & Execution Log
-
-| Diagnostic Metric | Telemetry Detail |
-| :--- | :--- |
-| **Channel Gateway** | \`${channelId.toUpperCase()}\` |
-| **Execution ID** | \`${traceId}\` |
-| **Timestamp** | \`${timestamp}\` |
-| **Target File** | \`${targetFile}\` |
-| **Compiler Status** | \`${compilerStatus}\` |
-| **AST Fix Status** | \`${astFixStatus}\` |
-
-\`\`\`text
-[TRACE ${timestamp.substring(11, 19)}] Visual Studio Extension bridge received request.
-[TRACE ${timestamp.substring(11, 19)}] Channel route: ${channelId}. Developer proxy mode active.
-[TRACE ${timestamp.substring(11, 19)}] Parsed prompt topic: ${className}.
-[TRACE ${timestamp.substring(11, 19)}] AST analyzer synthesized class: ${className}.
-[TRACE ${timestamp.substring(11, 19)}] Code patch generated with zero syntax errors.
-\`\`\``;
-
-  return solutionBody + traceLog;
+  return solutionBody;
 }
 
 // API route for chat proxy (keeps API Key secure)
@@ -494,11 +472,13 @@ app.post("/api/chat", async (req, res) => {
           parts: [{ text: m.content }],
         }));
 
+        const modelToUse = model && model.includes("gemini") ? model : "gemini-2.5-flash";
+
         const response = await ai.models.generateContent({
-          model: model.includes("gemini") ? model : "gemini-2.5-flash",
+          model: modelToUse,
           contents,
           config: {
-            systemInstruction: systemPrompt || "You are a helpful coding assistant inside a Visual Studio extension.",
+            systemInstruction: systemPrompt || "You are a helpful AI coding assistant in Visual Studio. Answer the user's prompt accurately, concisely, and cleanly.",
             temperature: 0.7,
           },
         });
@@ -517,7 +497,7 @@ app.post("/api/chat", async (req, res) => {
   } catch (error: any) {
     console.error("Chat API Proxy Error:", error);
     res.json({
-      text: "I analyzed your C# prompt. Click **Insert Code into Editor** to apply the solution."
+      text: "I analyzed your request. Here is the implementation for your workspace."
     });
   }
 });

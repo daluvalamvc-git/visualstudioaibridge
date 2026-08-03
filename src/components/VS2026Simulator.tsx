@@ -375,26 +375,20 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
     setUserInput("");
 
     try {
-      // Build proper full-context prompt with selection if present
-      let finalPrompt = promptToSend;
-      if (simulatedSelectedText) {
-        finalPrompt += `\n\nTarget Selection from Code Editor:\n\`\`\`csharp\n${simulatedSelectedText}\n\`\`\``;
-      }
-      if (loadedActiveFile) {
-        finalPrompt += `\n\nEntire active document content (${files[activeFileIndex].name}):\n\`\`\`csharp\n${files[activeFileIndex].content}\n\`\`\``;
-      }
-      if (loadedSolutionStructure) {
-        finalPrompt += `\n\nAvailable files in Visual Studio Solution:\n${files.map(f => `- ${f.name}`).join('\n')}`;
-      }
-
+      // Send request context to backend server controller for validation, solution reading, evaluation & prompt formatting
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          messages: [{ role: "user", content: finalPrompt }],
-          systemPrompt: config.systemPrompt,
+          userPrompt: promptToSend,
+          activeFileName: files[activeFileIndex]?.name,
+          activeFileContent: files[activeFileIndex]?.content,
+          selectedText: simulatedSelectedText,
+          solutionFiles: files.map(f => f.name),
+          messages: updatedMessages,
+          systemPrompt: config.systemPrompt || "You are a C# AI Assistant in Visual Studio. Evaluate prompts, loop through chunks using using statements if needed, and return clean code snippets.",
           model: session?.selectedChannel.defaultModel || config.defaultModel,
           channelId: session?.selectedChannel.id || "aistudio"
         })
@@ -461,13 +455,35 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
     executeChatRequest(textPrompt, true);
   };
 
+  // Creates a new file in the Visual Studio solution from generated AI code
+  const handleAddNewFileFromCode = (codeContent: string, defaultName?: string) => {
+    let suggestedName = defaultName || "GeneratedService.cs";
+    
+    // Try to extract class or interface name from the code
+    const classMatch = codeContent.match(/(?:public|internal)\s+(?:class|interface|struct)\s+([A-Za-z0-9_]+)/);
+    if (classMatch && classMatch[1]) {
+      suggestedName = `${classMatch[1]}.cs`;
+    }
+
+    const fileName = prompt("Enter a name for the new C# solution file:", suggestedName);
+    if (!fileName || !fileName.trim()) return;
+
+    const newFile: EditorFile = {
+      name: fileName.trim(),
+      language: "csharp",
+      content: codeContent
+    };
+
+    setFiles(prev => [...prev, newFile]);
+    setActiveFileIndex(files.length); // Focus the newly created file
+    setInsertSuccess(true);
+    setTimeout(() => setInsertSuccess(false), 3000);
+  };
+
   // Injects the last generated AI solution back into the simulated C# code editor
   const insertGeneratedCode = () => {
     if (!lastGeneratedCode) return;
     
-    const textarea = textEditorRef.current;
-    if (!textarea) return;
-
     const file = files[activeFileIndex];
     let newContent = "";
 
@@ -478,8 +494,8 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
         lastGeneratedCode + 
         file.content.substring(selection.end);
     } else {
-      // Replace the entire bubble sort method with the solution for demo
-      if (activeFileIndex === 0) {
+      // Replace the entire bubble sort method or file content with the solution
+      if (activeFileIndex === 0 && file.content.includes("// BUG:")) {
         newContent = file.content.replace(/\/\/ BUG:[\s\S]*?return array;\s*\}/, lastGeneratedCode);
       } else {
         newContent = lastGeneratedCode;
@@ -1139,6 +1155,45 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
                       </div>
                     )}
                     {renderMessageContent(msg.content)}
+
+                    {/* Action buttons if assistant response contains code block */}
+                    {msg.role === "assistant" && msg.content.includes("```") && (
+                      <div className="mt-2.5 pt-2 border-t border-[#3F3F46] flex flex-wrap gap-1.5">
+                        {(() => {
+                          const match = msg.content.match(/```(?:csharp|cs|json|javascript)?\n([\s\S]*?)```/);
+                          const extractedCode = match ? match[1] : "";
+                          if (!extractedCode) return null;
+                          return (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setLastGeneratedCode(extractedCode);
+                                  const updated = [...files];
+                                  updated[activeFileIndex] = { ...files[activeFileIndex], content: extractedCode };
+                                  setFiles(updated);
+                                  setInsertSuccess(true);
+                                  setTimeout(() => setInsertSuccess(false), 3000);
+                                }}
+                                className="bg-emerald-800 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded text-[10px] transition flex items-center space-x-1 cursor-pointer shadow-xs"
+                                title={`Overwrite ${files[activeFileIndex].name} with this code`}
+                              >
+                                <Zap className="w-3 h-3 text-amber-300 fill-amber-300" />
+                                <span>Apply to {files[activeFileIndex].name}</span>
+                              </button>
+
+                              <button
+                                onClick={() => handleAddNewFileFromCode(extractedCode)}
+                                className="bg-indigo-700 hover:bg-indigo-600 text-white font-bold px-2 py-1 rounded text-[10px] transition flex items-center space-x-1 cursor-pointer shadow-xs"
+                                title="Create a new C# file in Visual Studio solution"
+                              >
+                                <PlusCircle className="w-3 h-3 text-indigo-200" />
+                                <span>+ Save as New Solution File</span>
+                              </button>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

@@ -183,6 +183,100 @@ namespace DevWorkspace
     }
 }
 \`\`\``;
+  } else if (pLower.includes("prompt") || pLower.includes("evaluate") || pLower.includes("size") || pLower.includes("chunk") || pLower.includes("using statement") || pLower.includes("loop") || pLower.includes("data received")) {
+    className = "PromptChunkEvaluatorService";
+    targetFile = "PromptChunkEvaluatorService.cs";
+    compilerStatus = "Prompt Size Evaluator & Chunking Loop Synthesized";
+    astFixStatus = "Generated C# PromptChunkEvaluatorService with using statement streaming loop";
+    solutionBody = "### 🔄 C# Prompt Evaluator & Loop Handler Solution\n\n" +
+      "Here is a robust C# service that evaluates prompt size, splits large prompt payloads into chunks, sends them in a loop with using statements until all data is received, and formats the response for solution files:\n\n" +
+      "```csharp\n" +
+      "using System;\n" +
+      "using System.Collections.Generic;\n" +
+      "using System.IO;\n" +
+      "using System.Net.Http;\n" +
+      "using System.Text;\n" +
+      "using System.Text.Json;\n" +
+      "using System.Threading.Tasks;\n\n" +
+      "namespace DevWorkspace\n" +
+      "{\n" +
+      "    /// <summary>\n" +
+      "    /// Evaluates prompt size, chunks large API requests, loops with 'using' statements until all data is received,\n" +
+      "    /// and formats the consolidated response for solution files.\n" +
+      "    /// </summary>\n" +
+      "    public class PromptChunkEvaluatorService\n" +
+      "    {\n" +
+      "        private const int MaxFieldCharacterLimit = 2000; // Evaluated max safe prompt field size\n\n" +
+      "        /// <summary>\n" +
+      "        /// Evaluates prompt size text and sends request in a chunking loop using 'using' statements.\n" +
+      "        /// </summary>\n" +
+      "        public async Task<string> ProcessAndEvaluatePromptAsync(string promptText, string apiUrl, string apiKey)\n" +
+      "        {\n" +
+      "            if (string.IsNullOrWhiteSpace(promptText))\n" +
+      "            {\n" +
+      "                throw new ArgumentOutOfRangeException(nameof(promptText), \"Prompt text field cannot be null or empty.\");\n" +
+      "            }\n\n" +
+      "            // 1) Evaluate prompt size text\n" +
+      "            int totalCharacters = promptText.Length;\n" +
+      "            int estimatedTokens = (int)Math.Ceiling(totalCharacters / 4.0);\n" +
+      "            List<string> promptChunks = EvaluateAndChunkPrompt(promptText, MaxFieldCharacterLimit);\n\n" +
+      "            Console.WriteLine(\"[PromptEvaluator] Evaluated Prompt: \" + totalCharacters + \" chars (~\" + estimatedTokens + \" tokens). Divided into \" + promptChunks.Count + \" chunk field(s).\");\n\n" +
+      "            var consolidatedBuilder = new StringBuilder();\n" +
+      "            using var httpClient = new HttpClient();\n" +
+      "            httpClient.DefaultRequestHeaders.Add(\"Authorization\", \"Bearer \" + apiKey);\n\n" +
+      "            // 2) Send prompt chunks in a loop with 'using' statements until all data is received\n" +
+      "            for (int i = 0; i < promptChunks.Count; i++)\n" +
+      "            {\n" +
+      "                var payload = new\n" +
+      "                {\n" +
+      "                    chunkIndex = i + 1,\n" +
+      "                    totalChunks = promptChunks.Count,\n" +
+      "                    prompt = promptChunks[i]\n" +
+      "                };\n\n" +
+      "                string jsonContent = JsonSerializer.Serialize(payload);\n" +
+      "                using var content = new StringContent(jsonContent, Encoding.UTF8, \"application/json\");\n\n" +
+      "                // Execute HTTP POST with using statement stream handler\n" +
+      "                using var httpResponse = await httpClient.PostAsync(apiUrl, content);\n" +
+      "                httpResponse.EnsureSuccessStatusCode();\n\n" +
+      "                using var responseStream = await httpResponse.Content.ReadAsStreamAsync();\n" +
+      "                using var reader = new StreamReader(responseStream);\n" +
+      "                string receivedChunkData = await reader.ReadToEndAsync();\n\n" +
+      "                consolidatedBuilder.AppendLine(\"[Chunk \" + (i + 1) + \"/\" + promptChunks.Count + \" Received Data]\");\n" +
+      "                consolidatedBuilder.AppendLine(receivedChunkData);\n" +
+      "            }\n\n" +
+      "            // 3) Format the response cleanly for solution integration\n" +
+      "            return FormatConsolidatedResponse(consolidatedBuilder.ToString(), totalCharacters, promptChunks.Count);\n" +
+      "        }\n\n" +
+      "        /// <summary>\n" +
+      "        /// Evaluates and splits prompt text into safe chunk sizes.\n" +
+      "        /// </summary>\n" +
+      "        private List<string> EvaluateAndChunkPrompt(string promptText, int maxChunkLength)\n" +
+      "        {\n" +
+      "            var chunks = new List<string>();\n" +
+      "            for (int i = 0; i < promptText.Length; i += maxChunkLength)\n" +
+      "            {\n" +
+      "                int length = Math.Min(maxChunkLength, promptText.Length - i);\n" +
+      "                chunks.Add(promptText.Substring(i, length));\n" +
+      "            }\n" +
+      "            return chunks;\n" +
+      "        }\n\n" +
+      "        /// <summary>\n" +
+      "        /// Formats consolidated response for solution inclusion.\n" +
+      "        /// </summary>\n" +
+      "        private string FormatConsolidatedResponse(string rawResponseData, int totalChars, int totalChunks)\n" +
+      "        {\n" +
+      "            var sb = new StringBuilder();\n" +
+      "            sb.AppendLine(\"// ========================================================\");\n" +
+      "            sb.AppendLine(\"// PROMPT EVALUATION SUMMARY & CONSOLIDATED RESPONSE\");\n" +
+      "            sb.AppendLine(\"// Total Evaluated Size: \" + totalChars + \" Characters | \" + totalChunks + \" Chunk(s)\");\n" +
+      "            sb.AppendLine(\"// ========================================================\");\n" +
+      "            sb.AppendLine(rawResponseData.Trim());\n" +
+      "            sb.AppendLine(\"// ========================================================\");\n" +
+      "            return sb.ToString();\n" +
+      "        }\n" +
+      "    }\n" +
+      "}\n" +
+      "```\n";
   } else if (pLower.includes("file") || pLower.includes("read") || pLower.includes("write") || pLower.includes("stream") || pLower.includes("io")) {
     className = "FileStorageService";
     targetFile = "FileStorageService.cs";
@@ -190,7 +284,7 @@ namespace DevWorkspace
     astFixStatus = "Generated C# FileStorageService with System.IO & Task safety";
     solutionBody = `### 📁 C# File & I/O Service Solution
 
-Here is a robust asynchronous file storage manager in C# using \`System.IO\` and \`System.Text.Json\`:
+Here is a robust asynchronous file storage manager in C# using System.IO and System.Text.Json:
 
 \`\`\`csharp
 using System;
@@ -454,50 +548,153 @@ Click **Insert Code into Editor** or copy the snippet above to apply it to your 
   return solutionBody;
 }
 
-// API route for chat proxy (keeps API Key secure)
+// API route for chat proxy (keeps API Key secure, validates provider data size limits, loops send/receive chunks, and consolidates responses for AI chatbot integrator)
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages, systemPrompt, model = "gemini-2.5-flash", channelId = "aistudio" } = req.body;
+    const { 
+      provider = "gemini",
+      userPrompt: rawUserPrompt, 
+      activeFileName, 
+      activeFileContent, 
+      selectedText, 
+      solutionFiles, 
+      messages, 
+      systemPrompt, 
+      model = "gemini-2.5-flash", 
+      channelId = "aistudio" 
+    } = req.body;
 
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: "Invalid 'messages' format. Must be an array." });
+    // 1) READ API INPUT & SERVER-SIDE PROMPT VALIDATION
+    const userPrompt = (rawUserPrompt || (messages && messages[messages.length - 1]?.content) || "").trim();
+    
+    if (!userPrompt) {
+      return res.status(400).json({ 
+        error: "Server Prompt Validation Error: Prompt text field cannot be empty or null." 
+      });
     }
 
-    const lastMessage = messages[messages.length - 1]?.content || "";
+    // 2) READ SOLUTION CONTEXT & EXTRACT REQUIREMENTS
+    let solutionRequirements = "";
+    if (activeFileName) {
+      solutionRequirements += `- Target Active Document: ${activeFileName}\n`;
+    }
+    if (solutionFiles && Array.isArray(solutionFiles) && solutionFiles.length > 0) {
+      solutionRequirements += `- Solution Files in Workspace: ${solutionFiles.join(", ")}\n`;
+    }
+    if (selectedText) {
+      solutionRequirements += `- Selected Code Block:\n\`\`\`csharp\n${selectedText}\n\`\`\`\n`;
+    }
+    if (activeFileContent) {
+      const truncatedContent = activeFileContent.length > 3000 ? activeFileContent.substring(0, 3000) + "\n// ... [Truncated for prompt payload evaluation]" : activeFileContent;
+      solutionRequirements += `- Active Document Content:\n\`\`\`csharp\n${truncatedContent}\n\`\`\`\n`;
+    }
 
-    if (ai) {
-      try {
-        const contents = messages.map((m: any) => ({
-          role: m.role === "assistant" ? "model" : "user",
-          parts: [{ text: m.content }],
-        }));
+    // 3) EVALUATE DATA SIZE LIMITS BASED ON AI PROVIDER
+    const providerName = provider.toLowerCase().includes("gemini") || model.toLowerCase().includes("gemini") ? "Google Gemini API" : "AI Studio Workspace Controller";
+    const maxChunkCharSize = 2500; // Safe evaluated character limit per chunk for provider payload processing
 
-        const modelToUse = model && model.includes("gemini") ? model : "gemini-2.5-flash";
+    const combinedText = userPrompt + "\n" + solutionRequirements;
+    const totalChars = combinedText.length;
+    const estimatedTokens = Math.ceil(totalChars / 4);
+    const totalChunks = Math.max(1, Math.ceil(totalChars / maxChunkCharSize));
 
-        const response = await ai.models.generateContent({
-          model: modelToUse,
-          contents,
-          config: {
-            systemInstruction: systemPrompt || "You are a helpful AI coding assistant in Visual Studio. Answer the user's prompt accurately, concisely, and cleanly.",
-            temperature: 0.7,
-          },
-        });
+    console.log(`[AI Provider Controller] Provider: ${providerName} | Size: ${totalChars} chars (~${estimatedTokens} tokens) | Target Chunks: ${totalChunks}`);
 
-        if (response.text) {
-          return res.json({ text: response.text });
+    // Helper function to call AI Provider per chunk
+    const callAiProviderChunk = async (promptPayload: string, chunkIdx: number, totalChunksCount: number): Promise<string> => {
+      if (ai) {
+        try {
+          const contents = [{ role: "user", parts: [{ text: promptPayload }] }];
+          const modelToUse = model && model.includes("gemini") ? model : "gemini-2.5-flash";
+
+          const response = await ai.models.generateContent({
+            model: modelToUse,
+            contents,
+            config: {
+              systemInstruction: systemPrompt || "You are a C# AI Assistant in Visual Studio 2026. Evaluate prompts, inspect solution file requirements, and return clean code solutions with file application options.",
+              temperature: 0.7,
+            },
+          });
+
+          if (response.text) {
+            return response.text;
+          }
+        } catch (geminiError: any) {
+          console.warn(`[AI Provider Chunk ${chunkIdx + 1}/${totalChunksCount}] Provider call fallback:`, geminiError?.message);
         }
-      } catch (geminiError: any) {
-        console.warn("Gemini server proxy call failed, falling back to developer AI synthesizer:", geminiError?.message);
       }
+
+      // Fallback Developer AI Engine
+      return generateDeveloperAiResponse(promptPayload, channelId);
+    };
+
+    // 4) MULTIPLE SEND & RECEIVE LOOP TO CONSOLIDATE RESPONSES IF DATA SIZE REQUIRES CHUNKING
+    let consolidatedResponseText = "";
+    const receivedChunkResponses: string[] = [];
+
+    if (totalChunks === 1) {
+      // Single payload request to AI provider
+      const formattedSinglePrompt = `[AI PROVIDER EVALUATED PROMPT - SINGLE BATCH]
+Provider: ${providerName}
+Payload Size: ${totalChars} characters (~${estimatedTokens} tokens)
+
+[USER REQUEST]
+${userPrompt}
+
+[SOLUTION CONTEXT & MODIFICATION REQUIREMENTS]
+${solutionRequirements || "- General Visual Studio C# Solution Workspace"}
+
+[FORMATTING INSTRUCTIONS]
+Provide clean, production-ready C# code formatted in \`\`\`csharp code blocks. Include solution file modification guidance and file creation option.`;
+
+      consolidatedResponseText = await callAiProviderChunk(formattedSinglePrompt, 0, 1);
+    } else {
+      // Loop sending prompt chunks to AI provider and receiving chunk responses
+      console.log(`[AI Provider Loop] Initiating ${totalChunks} send/receive loops for consolidated data processing...`);
+
+      for (let i = 0; i < totalChunks; i++) {
+        const startIdx = i * maxChunkCharSize;
+        const endIdx = Math.min(startIdx + maxChunkCharSize, totalChars);
+        const chunkContent = combinedText.substring(startIdx, endIdx);
+
+        const chunkPrompt = `[AI PROVIDER CHUNKED PROMPT - LOOP ${i + 1} OF ${totalChunks}]
+Provider: ${providerName}
+Batch Index: ${i + 1}/${totalChunks}
+Chunk Size: ${chunkContent.length} characters
+
+[PROMPT DATA SEGMENT]
+${chunkContent}
+
+[INSTRUCTION FOR CHUNK ${i + 1}]
+Analyze this segment within the context of the overall solution request. Provide C# implementation code snippets for solution file integration.`;
+
+        const chunkResponse = await callAiProviderChunk(chunkPrompt, i, totalChunks);
+        receivedChunkResponses.push(chunkResponse);
+      }
+
+      // Consolidate multiple chunk responses into unified response for AI chatbot integrator
+      consolidatedResponseText = `### 🔄 [AI Provider Consolidated Response - ${totalChunks} Batches Processed]\n\n` +
+        `**Provider**: ${providerName} | **Total Evaluated Size**: ${totalChars} Chars (~${estimatedTokens} Tokens) | **Chunks Processed**: ${totalChunks}\n\n` +
+        receivedChunkResponses.join("\n\n---\n\n");
     }
 
-    // High Quality Developer AI Fallback for Free Tier / Unconfigured Key
-    const synthesizedResponse = generateDeveloperAiResponse(lastMessage, channelId);
-    res.json({ text: synthesizedResponse });
+    // 5) CONSOLIDATED RESPONSE RETURNED TO AI CHATBOT INTEGRATOR
+    return res.json({ 
+      text: consolidatedResponseText,
+      evaluatedMetrics: { 
+        provider: providerName,
+        totalChars, 
+        estimatedTokens, 
+        chunksProcessed: totalChunks,
+        consolidatedLength: consolidatedResponseText.length 
+      }
+    });
+
   } catch (error: any) {
-    console.error("Chat API Proxy Error:", error);
-    res.json({
-      text: "I analyzed your request. Here is the implementation for your workspace."
+    console.error("Chat Controller API Proxy Error:", error);
+    res.status(500).json({
+      error: "Server Controller error processing prompt.",
+      text: "I analyzed your request server-side. Here is the implementation for your solution workspace."
     });
   }
 });

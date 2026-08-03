@@ -69,3 +69,12 @@ export interface UserSession {
   credits: AccountCredits;
 }
 
+export interface SolutionFile {
+  id: string; // File ID
+  name: string; // File Name
+  uploadedTime: string; // Formatted Uploaded Time
+  size?: string;
+  type?: string;
+  previewUrl?: string;
+}
+

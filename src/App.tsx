@@ -3,14 +3,16 @@ import { ExtensionConfig, UserSession } from "./types";
 import ExtensionConfigurator from "./components/ExtensionConfigurator";
 import VS2026Simulator from "./components/VS2026Simulator";
 import SignInPage from "./components/SignInPage";
+import SolutionFileManager from "./components/SolutionFileManager";
 import { 
   Sparkles, Code, Download, Terminal, Settings, 
   HelpCircle, ChevronRight, BookOpen, Layers, Play,
-  User, LogOut, Radio, Cpu
+  User, LogOut, Radio, Cpu, Folder
 } from "lucide-react";
 
 export default function App() {
   const [session, setSession] = useState<UserSession | null>(null);
+  const [mainLandingTab, setMainLandingTab] = useState<"simulator" | "files">("simulator");
 
   const [config, setConfig] = useState<ExtensionConfig>({
     extensionName: "visualstudioaibridge",
@@ -100,7 +102,7 @@ export default function App() {
 
           <button
             onClick={handleSignOut}
-            className="bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-indigo-600 text-gray-300 hover:text-white px-3 py-1.5 rounded-xl transition flex items-center space-x-1.5 font-medium shadow-sm"
+            className="bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-indigo-600 text-gray-300 hover:text-white px-3 py-1.5 rounded-xl transition flex items-center space-x-1.5 font-medium shadow-sm cursor-pointer"
             title="Switch AI Channel or Sign Out"
           >
             <LogOut className="w-4 h-4 text-indigo-400" />
@@ -109,40 +111,80 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Grid Workspace */}
-      <main className="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 p-6 overflow-hidden min-h-0">
-        {/* Left Configurator Column */}
-        <div className="xl:col-span-5 h-full flex flex-col min-h-0">
-          <ExtensionConfigurator config={config} onChange={setConfig} />
+      {/* Landing Page Primary Navigation Tabs */}
+      <div className="bg-gray-900 border-b border-gray-800 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setMainLandingTab("simulator")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 transition cursor-pointer ${
+              mainLandingTab === "simulator"
+                ? "bg-indigo-600 text-white shadow-md border border-indigo-500"
+                : "bg-gray-950 text-gray-400 hover:text-gray-200 hover:bg-gray-800 border border-gray-800"
+            }`}
+          >
+            <Terminal className="w-4 h-4" />
+            <span>⚡ IDE Builder &amp; Extension Simulator</span>
+          </button>
+
+          <button
+            onClick={() => setMainLandingTab("files")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 transition cursor-pointer ${
+              mainLandingTab === "files"
+                ? "bg-indigo-600 text-white shadow-md border border-indigo-500"
+                : "bg-gray-950 text-gray-400 hover:text-gray-200 hover:bg-gray-800 border border-gray-800"
+            }`}
+          >
+            <Folder className="w-4 h-4 text-indigo-400" />
+            <span>📷 Solution Photos &amp; Files Registry</span>
+          </button>
         </div>
 
-        {/* Right VS 2026 Simulator Column */}
-        <div className="xl:col-span-7 h-full flex flex-col min-h-0">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl flex flex-col h-full">
-            {/* Header tab for simulator */}
-            <div className="bg-gray-950 px-5 py-4 border-b border-gray-800 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Terminal className="w-5 h-5 text-indigo-400" />
-                <h3 className="font-semibold text-gray-100 text-base">Live IDE Extension Simulator</h3>
+        <div className="flex items-center space-x-2 text-[11px] text-gray-400 font-mono">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Workspace Active: {session.selectedChannel.name}</span>
+        </div>
+      </div>
+
+      {/* Main Tab Workspace Content */}
+      {mainLandingTab === "simulator" ? (
+        <main className="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 p-6 overflow-hidden min-h-0">
+          {/* Left Configurator Column */}
+          <div className="xl:col-span-5 h-full flex flex-col min-h-0">
+            <ExtensionConfigurator config={config} onChange={setConfig} />
+          </div>
+
+          {/* Right VS 2026 Simulator Column */}
+          <div className="xl:col-span-7 h-full flex flex-col min-h-0">
+            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl flex flex-col h-full">
+              {/* Header tab for simulator */}
+              <div className="bg-gray-950 px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Terminal className="w-5 h-5 text-indigo-400" />
+                  <h3 className="font-semibold text-gray-100 text-base">Live IDE Extension Simulator</h3>
+                </div>
+                <span className="text-xs font-mono text-indigo-300 bg-indigo-950 px-2 py-0.5 rounded border border-indigo-900">
+                  Connected to {session.selectedChannel.name}
+                </span>
               </div>
-              <span className="text-xs font-mono text-indigo-300 bg-indigo-950 px-2 py-0.5 rounded border border-indigo-900">
-                Connected to {session.selectedChannel.name}
-              </span>
-            </div>
 
-            {/* Quick Helper Tip */}
-            <div className="bg-indigo-950 bg-opacity-30 border-b border-indigo-900 p-3 text-xs text-indigo-200 flex items-center space-x-2">
-              <span className="bg-indigo-900 text-indigo-300 font-bold px-1.5 py-0.5 rounded text-[10px]">INSTRUCTIONS</span>
-              <span>Select code inside the file editor below (e.g., highlight the BubbleSort buggy code), and click one of your custom commands on the right!</span>
-            </div>
+              {/* Quick Helper Tip */}
+              <div className="bg-indigo-950 bg-opacity-30 border-b border-indigo-900 p-3 text-xs text-indigo-200 flex items-center space-x-2">
+                <span className="bg-indigo-900 text-indigo-300 font-bold px-1.5 py-0.5 rounded text-[10px]">INSTRUCTIONS</span>
+                <span>Select code inside the file editor below (e.g., highlight the BubbleSort buggy code), and click one of your custom commands on the right!</span>
+              </div>
 
-            {/* The actual high fidelity simulator component */}
-            <div className="flex-1 min-h-0 p-4 bg-gray-950">
-              <VS2026Simulator config={config} session={session} onChangeChannel={handleSignOut} />
+              {/* The actual high fidelity simulator component */}
+              <div className="flex-1 min-h-0 p-4 bg-gray-950">
+                <VS2026Simulator config={config} session={session} onChangeChannel={handleSignOut} />
+              </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      ) : (
+        <main className="flex-1 p-6 overflow-hidden min-h-0">
+          <SolutionFileManager />
+        </main>
+      )}
 
       {/* Quick Start & Installation Guide */}
       <section className="bg-gray-900 border-t border-gray-800 p-8 shrink-0" id="quick-start-guide">

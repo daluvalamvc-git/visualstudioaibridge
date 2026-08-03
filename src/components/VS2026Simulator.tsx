@@ -134,7 +134,16 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
       id: "greet",
       role: "assistant",
       content: `Hello **${username}**! I am connected to **${channelName}** running model \`${channelModel}\`. Highlight C# code in the editor on the left and type a prompt or click a slash command below!`,
-      timestamp: new Date()
+      timestamp: new Date(),
+      telemetry: {
+        userPrompt: "System Workspace Handshake & Initializing Solution",
+        solutionRequirements: "- Solution Files: ChatController.cs, SortAlgorithms.cs, UserController.cs\n- Active Document: ChatController.cs",
+        sentPrompt: `[AI PROVIDER INITIALIZATION PROMPT]\nProvider: ${channelName}\nModel: ${channelModel}\n\n[SOLUTION CONTEXT READ]\nTarget Workspace: C# Visual Studio 2026 Solution\nLoaded Files: ChatController.cs, SortAlgorithms.cs, UserController.cs`,
+        provider: channelName,
+        totalChars: 380,
+        estimatedTokens: 95,
+        chunksProcessed: 1
+      }
     }
   ]);
   const [userInput, setUserInput] = useState("");
@@ -149,7 +158,7 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
   const [loadedSolutionStructure, setLoadedSolutionStructure] = useState(false);
 
   // Telemetry & Prompt Inspection States
-  const [expandedTelemetryId, setExpandedTelemetryId] = useState<string | null>(null);
+  const [expandedTelemetryId, setExpandedTelemetryId] = useState<string | null>("greet");
   const [telemetryTabMap, setTelemetryTabMap] = useState<Record<string, "sent" | "user" | "requirements" | "response">>({});
   const [inspectModalMessage, setInspectModalMessage] = useState<ChatMessage | null>(null);
   const [copiedNotice, setCopiedNotice] = useState<string | null>(null);
@@ -272,16 +281,10 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
     const isNowLoaded = !loadedActiveFile;
     setLoadedActiveFile(isNowLoaded);
     if (isNowLoaded) {
-      setLoadedSolutionStructure(false); // clear other
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: Math.random().toString(36).substring(7),
-          role: "assistant",
-          content: `📄 **Captured entire active file context (${files[activeFileIndex].name})** into chat memory. You can now prompt me directly about this code block, ask to refactor it, or explain its behavior. I will read and respect the entire document content during generation!`,
-          timestamp: new Date()
-        }
-      ]);
+      setLoadedSolutionStructure(false);
+      const activeFile = files[activeFileIndex];
+      const promptText = `[READ ACTIVE DOCUMENT ANALYSIS] Please analyze active document '${activeFile.name}' from the Visual Studio solution. Review its code structure, identify potential bugs or performance bottlenecks, and explain its role in the project.`;
+      executeChatRequest(promptText, false);
     }
   };
 
@@ -289,17 +292,10 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
     const isNowLoaded = !loadedSolutionStructure;
     setLoadedSolutionStructure(isNowLoaded);
     if (isNowLoaded) {
-      setLoadedActiveFile(false); // clear other
-      const formattedList = files.map(f => `- \`${f.name}\``).join('\n');
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: Math.random().toString(36).substring(7),
-          role: "assistant",
-          content: `📂 **Captured entire solution workspace index list!** Available files in Visual Studio Solution:\n\n${formattedList}\n\nYou can ask questions like "Explain UserController.cs" or ask me to write a new class integrating with these.`,
-          timestamp: new Date()
-        }
-      ]);
+      setLoadedActiveFile(false);
+      const fileNames = files.map(f => f.name).join(", ");
+      const promptText = `[READ SOLUTION WORKSPACE ANALYSIS] Please analyze all ${files.length} files in this Visual Studio solution (${fileNames}). Evaluate how these C# classes interact, check for missing dependencies, and provide architectural optimization recommendations.`;
+      executeChatRequest(promptText, false);
     }
   };
 
@@ -432,16 +428,21 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
         chunksProcessed: data.evaluatedMetrics?.chunksProcessed || 1,
       };
 
+      const asstMsgId = Math.random().toString(36).substring(7);
       setChatMessages((prev) => [
         ...prev,
         {
-          id: Math.random().toString(36).substring(7),
+          id: asstMsgId,
           role: "assistant",
           content: data.text,
           timestamp: new Date(),
           telemetry
         }
       ]);
+
+      // Auto-expand prompt & telemetry analysis panel for new assistant message
+      setExpandedTelemetryId(asstMsgId);
+      setTelemetryTabMap(prev => ({ ...prev, [asstMsgId]: "sent" }));
 
       // Auto-apply solution if autoApply parameter is true and code was returned
       if (autoApply && generatedCode) {

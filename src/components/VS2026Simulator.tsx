@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { 
-  ExtensionConfig, ChatMessage, EditorFile, UserSession 
+  ExtensionConfig, ChatMessage, EditorFile, UserSession, PromptTelemetry 
 } from "../types";
 import { 
   Play, Save, Search, Folder, FileCode, User, 
   ChevronRight, ChevronDown, ChevronUp, Send, Code2, Sparkles, 
   Check, RefreshCw, X, Eraser, Info, ArrowUpRight,
   Terminal, AlertCircle, LogOut, Cpu, Zap, CreditCard,
-  PlusCircle, BarChart2, ShieldCheck, Sliders, Key
+  PlusCircle, BarChart2, ShieldCheck, Sliders, Key,
+  Eye, Copy, FileText, Layers, MessageSquare
 } from "lucide-react";
 
 interface Props {
@@ -146,6 +147,18 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
   const [insertSuccess, setInsertSuccess] = useState(false);
   const [loadedActiveFile, setLoadedActiveFile] = useState(false);
   const [loadedSolutionStructure, setLoadedSolutionStructure] = useState(false);
+
+  // Telemetry & Prompt Inspection States
+  const [expandedTelemetryId, setExpandedTelemetryId] = useState<string | null>(null);
+  const [telemetryTabMap, setTelemetryTabMap] = useState<Record<string, "sent" | "user" | "requirements" | "response">>({});
+  const [inspectModalMessage, setInspectModalMessage] = useState<ChatMessage | null>(null);
+  const [copiedNotice, setCopiedNotice] = useState<string | null>(null);
+
+  const handleCopyText = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedNotice(label);
+    setTimeout(() => setCopiedNotice(null), 2500);
+  };
 
   // Collapsible Account & Credits/Usage Panel States
   const [isAccountPanelExpanded, setIsAccountPanelExpanded] = useState(true);
@@ -409,13 +422,24 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
         setLastGeneratedCode(generatedCode);
       }
 
+      const telemetry: PromptTelemetry = {
+        userPrompt: data.userPrompt || promptToSend,
+        solutionRequirements: data.solutionRequirements || `- Target Active Document: ${files[activeFileIndex]?.name || "Solution Workspace"}`,
+        sentPrompt: data.sentPrompt || `[AI PROVIDER EVALUATED PROMPT]\nProvider: ${channelName}\n\n[USER REQUEST]\n${promptToSend}`,
+        provider: data.evaluatedMetrics?.provider || channelName,
+        totalChars: data.evaluatedMetrics?.totalChars || promptToSend.length,
+        estimatedTokens: data.evaluatedMetrics?.estimatedTokens || Math.ceil(promptToSend.length / 4),
+        chunksProcessed: data.evaluatedMetrics?.chunksProcessed || 1,
+      };
+
       setChatMessages((prev) => [
         ...prev,
         {
           id: Math.random().toString(36).substring(7),
           role: "assistant",
           content: data.text,
-          timestamp: new Date()
+          timestamp: new Date(),
+          telemetry
         }
       ]);
 
@@ -1156,42 +1180,206 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
                     )}
                     {renderMessageContent(msg.content)}
 
-                    {/* Action buttons if assistant response contains code block */}
-                    {msg.role === "assistant" && msg.content.includes("```") && (
-                      <div className="mt-2.5 pt-2 border-t border-[#3F3F46] flex flex-wrap gap-1.5">
-                        {(() => {
-                          const match = msg.content.match(/```(?:csharp|cs|json|javascript)?\n([\s\S]*?)```/);
-                          const extractedCode = match ? match[1] : "";
-                          if (!extractedCode) return null;
-                          return (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setLastGeneratedCode(extractedCode);
-                                  const updated = [...files];
-                                  updated[activeFileIndex] = { ...files[activeFileIndex], content: extractedCode };
-                                  setFiles(updated);
-                                  setInsertSuccess(true);
-                                  setTimeout(() => setInsertSuccess(false), 3000);
-                                }}
-                                className="bg-emerald-800 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded text-[10px] transition flex items-center space-x-1 cursor-pointer shadow-xs"
-                                title={`Overwrite ${files[activeFileIndex].name} with this code`}
-                              >
-                                <Zap className="w-3 h-3 text-amber-300 fill-amber-300" />
-                                <span>Apply to {files[activeFileIndex].name}</span>
-                              </button>
+                    {/* Action buttons & AI Prompt Telemetry Inspector */}
+                    {msg.role === "assistant" && (
+                      <div className="mt-2.5 pt-2 border-t border-[#3F3F46] space-y-2">
+                        {/* Code Application buttons if block exists */}
+                        {msg.content.includes("```") && (
+                          <div className="flex flex-wrap gap-1.5 pb-1">
+                            {(() => {
+                              const match = msg.content.match(/```(?:csharp|cs|json|javascript)?\n([\s\S]*?)```/);
+                              const extractedCode = match ? match[1] : "";
+                              if (!extractedCode) return null;
+                              return (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setLastGeneratedCode(extractedCode);
+                                      const updated = [...files];
+                                      updated[activeFileIndex] = { ...files[activeFileIndex], content: extractedCode };
+                                      setFiles(updated);
+                                      setInsertSuccess(true);
+                                      setTimeout(() => setInsertSuccess(false), 3000);
+                                    }}
+                                    className="bg-emerald-800 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded text-[10px] transition flex items-center space-x-1 cursor-pointer shadow-xs"
+                                    title={`Overwrite ${files[activeFileIndex].name} with this code`}
+                                  >
+                                    <Zap className="w-3 h-3 text-amber-300 fill-amber-300" />
+                                    <span>Apply to {files[activeFileIndex].name}</span>
+                                  </button>
 
-                              <button
-                                onClick={() => handleAddNewFileFromCode(extractedCode)}
-                                className="bg-indigo-700 hover:bg-indigo-600 text-white font-bold px-2 py-1 rounded text-[10px] transition flex items-center space-x-1 cursor-pointer shadow-xs"
-                                title="Create a new C# file in Visual Studio solution"
-                              >
-                                <PlusCircle className="w-3 h-3 text-indigo-200" />
-                                <span>+ Save as New Solution File</span>
-                              </button>
-                            </>
-                          );
-                        })()}
+                                  <button
+                                    onClick={() => handleAddNewFileFromCode(extractedCode)}
+                                    className="bg-indigo-700 hover:bg-indigo-600 text-white font-bold px-2 py-1 rounded text-[10px] transition flex items-center space-x-1 cursor-pointer shadow-xs"
+                                    title="Create a new C# file in Visual Studio solution"
+                                  >
+                                    <PlusCircle className="w-3 h-3 text-indigo-200" />
+                                    <span>+ Save as New Solution File</span>
+                                  </button>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        )}
+
+                        {/* Telemetry Inspection Toggle Bar */}
+                        <div className="flex items-center justify-between text-[10px] gap-1 pt-1 border-t border-[#3F3F46]">
+                          <button
+                            onClick={() => {
+                              setExpandedTelemetryId(expandedTelemetryId === msg.id ? null : msg.id);
+                              if (!telemetryTabMap[msg.id]) {
+                                setTelemetryTabMap(prev => ({ ...prev, [msg.id]: "sent" }));
+                              }
+                            }}
+                            className="bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-800/80 text-indigo-300 hover:text-white px-2 py-0.5 rounded font-semibold flex items-center space-x-1 transition cursor-pointer"
+                            title="Inspect user prompt, solution requirements, and prompt formatted for AI provider"
+                          >
+                            <Eye className="w-3 h-3 text-indigo-400" />
+                            <span>{expandedTelemetryId === msg.id ? "Hide AI Prompt Details" : "🔍 View Prompt Sent to AI Provider & Details"}</span>
+                          </button>
+
+                          <button
+                            onClick={() => setInspectModalMessage(msg)}
+                            className="text-gray-400 hover:text-indigo-300 flex items-center space-x-1 cursor-pointer"
+                            title="Open AI Prompt & Telemetry Inspector Dialog"
+                          >
+                            <Terminal className="w-3 h-3" />
+                            <span>Inspect Payload</span>
+                          </button>
+                        </div>
+
+                        {/* Expanded Telemetry Inspector Box */}
+                        {expandedTelemetryId === msg.id && (
+                          <div className="mt-2 bg-[#18181B] border border-indigo-900/80 rounded-lg p-2 space-y-2 font-sans text-xs animate-fade-in shadow-inner">
+                            {/* Sub-tab navigation */}
+                            <div className="flex items-center justify-between border-b border-[#3F3F46] pb-1.5 flex-wrap gap-1 text-[9.5px]">
+                              <div className="flex items-center space-x-1 flex-wrap gap-1">
+                                <button
+                                  onClick={() => setTelemetryTabMap(prev => ({ ...prev, [msg.id]: "sent" }))}
+                                  className={`px-1.5 py-0.5 rounded font-bold transition cursor-pointer ${
+                                    (telemetryTabMap[msg.id] || "sent") === "sent" 
+                                      ? "bg-indigo-600 text-white" 
+                                      : "text-gray-400 hover:text-gray-200 hover:bg-[#252526]"
+                                  }`}
+                                >
+                                  <span>📤 Prompt Sent</span>
+                                </button>
+
+                                <button
+                                  onClick={() => setTelemetryTabMap(prev => ({ ...prev, [msg.id]: "user" }))}
+                                  className={`px-1.5 py-0.5 rounded font-bold transition cursor-pointer ${
+                                    telemetryTabMap[msg.id] === "user" 
+                                      ? "bg-indigo-600 text-white" 
+                                      : "text-gray-400 hover:text-gray-200 hover:bg-[#252526]"
+                                  }`}
+                                >
+                                  <span>👤 User Prompt</span>
+                                </button>
+
+                                <button
+                                  onClick={() => setTelemetryTabMap(prev => ({ ...prev, [msg.id]: "requirements" }))}
+                                  className={`px-1.5 py-0.5 rounded font-bold transition cursor-pointer ${
+                                    telemetryTabMap[msg.id] === "requirements" 
+                                      ? "bg-indigo-600 text-white" 
+                                      : "text-gray-400 hover:text-gray-200 hover:bg-[#252526]"
+                                  }`}
+                                >
+                                  <span>📋 Solution Summary</span>
+                                </button>
+
+                                <button
+                                  onClick={() => setTelemetryTabMap(prev => ({ ...prev, [msg.id]: "response" }))}
+                                  className={`px-1.5 py-0.5 rounded font-bold transition cursor-pointer ${
+                                    telemetryTabMap[msg.id] === "response" 
+                                      ? "bg-indigo-600 text-white" 
+                                      : "text-gray-400 hover:text-gray-200 hover:bg-[#252526]"
+                                  }`}
+                                >
+                                  <span>📥 Response Received</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Tab Panels */}
+                            <div className="pt-1">
+                              {/* 1) Prompt Sent to AI Provider */}
+                              {(telemetryTabMap[msg.id] || "sent") === "sent" && (
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-[9.5px] text-gray-400 font-mono">
+                                    <span>Evaluated Formatted Prompt Sent to AI Provider:</span>
+                                    <button
+                                      onClick={() => handleCopyText(msg.telemetry?.sentPrompt || msg.content, "sent")}
+                                      className="text-indigo-400 hover:text-indigo-200 flex items-center space-x-1 cursor-pointer font-sans"
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                      <span>{copiedNotice === "sent" ? "Copied!" : "Copy Prompt"}</span>
+                                    </button>
+                                  </div>
+                                  <pre className="bg-[#09090B] p-2 rounded border border-[#27272A] text-indigo-200 font-mono text-[9.5px] overflow-x-auto whitespace-pre-wrap max-h-40 custom-scrollbar">
+                                    {msg.telemetry?.sentPrompt || `[AI PROVIDER EVALUATED PROMPT]\nProvider: ${channelName}\n\n${msg.content}`}
+                                  </pre>
+                                </div>
+                              )}
+
+                              {/* 2) User Prompt */}
+                              {telemetryTabMap[msg.id] === "user" && (
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-[9.5px] text-gray-400 font-mono">
+                                    <span>Original User Prompt Submitted to Extension:</span>
+                                    <button
+                                      onClick={() => handleCopyText(msg.telemetry?.userPrompt || "", "user")}
+                                      className="text-indigo-400 hover:text-indigo-200 flex items-center space-x-1 cursor-pointer font-sans"
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                      <span>{copiedNotice === "user" ? "Copied!" : "Copy Input"}</span>
+                                    </button>
+                                  </div>
+                                  <div className="bg-[#09090B] p-2 rounded border border-[#27272A] text-emerald-300 font-mono text-[9.5px] whitespace-pre-wrap">
+                                    {msg.telemetry?.userPrompt || "User prompt captured"}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 3) Solution Summary Requirements */}
+                              {telemetryTabMap[msg.id] === "requirements" && (
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-[9.5px] text-gray-400 font-mono">
+                                    <span>Solution Context & Requirements Appended by Controller:</span>
+                                    <button
+                                      onClick={() => handleCopyText(msg.telemetry?.solutionRequirements || "", "req")}
+                                      className="text-indigo-400 hover:text-indigo-200 flex items-center space-x-1 cursor-pointer font-sans"
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                      <span>{copiedNotice === "req" ? "Copied!" : "Copy Context"}</span>
+                                    </button>
+                                  </div>
+                                  <pre className="bg-[#09090B] p-2 rounded border border-[#27272A] text-amber-300 font-mono text-[9.5px] overflow-x-auto whitespace-pre-wrap max-h-40 custom-scrollbar">
+                                    {msg.telemetry?.solutionRequirements || "- Target Active Document: ChatController.cs\n- Solution Files: ChatController.cs, SortAlgorithms.cs, UserController.cs"}
+                                  </pre>
+                                </div>
+                              )}
+
+                              {/* 4) Response Received */}
+                              {telemetryTabMap[msg.id] === "response" && (
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-[9.5px] text-gray-400 font-mono">
+                                    <span>Response Payload Received from AI Provider:</span>
+                                    <button
+                                      onClick={() => handleCopyText(msg.content, "res")}
+                                      className="text-indigo-400 hover:text-indigo-200 flex items-center space-x-1 cursor-pointer font-sans"
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                      <span>{copiedNotice === "res" ? "Copied!" : "Copy Response"}</span>
+                                    </button>
+                                  </div>
+                                  <pre className="bg-[#09090B] p-2 rounded border border-[#27272A] text-gray-200 font-mono text-[9.5px] overflow-x-auto whitespace-pre-wrap max-h-40 custom-scrollbar">
+                                    {msg.content}
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1401,6 +1589,129 @@ export default function VS2026Simulator({ config, session, onChangeChannel }: Pr
           </div>
         )}
       </div>
+
+      {/* Full-Screen / Large Dialog Prompt & Telemetry Inspector Modal */}
+      {inspectModalMessage && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-[#1E1E1E] border border-indigo-500/50 rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-[#2D2D30] px-4 py-3 border-b border-[#3F3F46] flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Terminal className="w-5 h-5 text-indigo-400" />
+                <div>
+                  <h3 className="text-sm font-bold text-gray-100">AI Studio Prompt & Telemetry Inspector</h3>
+                  <p className="text-[11px] text-gray-400">
+                    Provider: <span className="text-indigo-300 font-medium">{inspectModalMessage.telemetry?.provider || channelName}</span> | 
+                    Evaluated Size: <span className="text-indigo-300 font-mono">{inspectModalMessage.telemetry?.totalChars || 0} Chars</span> (~<span className="text-indigo-300 font-mono">{inspectModalMessage.telemetry?.estimatedTokens || 0} Tokens</span>)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setInspectModalMessage(null)}
+                className="text-gray-400 hover:text-white p-1 rounded-md hover:bg-[#3F3F46] transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body with 4 Sections */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[#121214]">
+              {/* Section 1: User Prompt */}
+              <div className="bg-[#18181B] p-3 rounded-lg border border-[#27272A] space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-semibold text-emerald-400">
+                  <div className="flex items-center space-x-1.5">
+                    <User className="w-4 h-4 text-emerald-400" />
+                    <span>1. User Input Prompt Sent on Chatbot</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopyText(inspectModalMessage.telemetry?.userPrompt || "", "modal_user")}
+                    className="text-[10px] text-indigo-400 hover:text-indigo-200 flex items-center space-x-1 cursor-pointer"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>{copiedNotice === "modal_user" ? "Copied!" : "Copy"}</span>
+                  </button>
+                </div>
+                <div className="bg-[#09090B] p-2.5 rounded border border-[#27272A] text-emerald-200 font-mono text-xs whitespace-pre-wrap leading-relaxed">
+                  {inspectModalMessage.telemetry?.userPrompt || "User prompt unavailable"}
+                </div>
+              </div>
+
+              {/* Section 2: Solution Summary Requirements */}
+              <div className="bg-[#18181B] p-3 rounded-lg border border-[#27272A] space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-semibold text-amber-400">
+                  <div className="flex items-center space-x-1.5">
+                    <FileText className="w-4 h-4 text-amber-400" />
+                    <span>2. Solution Context & Modification Requirements</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopyText(inspectModalMessage.telemetry?.solutionRequirements || "", "modal_req")}
+                    className="text-[10px] text-indigo-400 hover:text-indigo-200 flex items-center space-x-1 cursor-pointer"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>{copiedNotice === "modal_req" ? "Copied!" : "Copy"}</span>
+                  </button>
+                </div>
+                <pre className="bg-[#09090B] p-2.5 rounded border border-[#27272A] text-amber-200 font-mono text-xs overflow-x-auto whitespace-pre-wrap max-h-48 custom-scrollbar leading-relaxed">
+                  {inspectModalMessage.telemetry?.solutionRequirements || "- Target Active Document: ChatController.cs"}
+                </pre>
+              </div>
+
+              {/* Section 3: Prompt Sent to AI Provider */}
+              <div className="bg-[#18181B] p-3 rounded-lg border border-[#27272A] space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-semibold text-indigo-400">
+                  <div className="flex items-center space-x-1.5">
+                    <Sparkles className="w-4 h-4 text-indigo-400" />
+                    <span>3. Evaluated Formatted Prompt Sent to AI Provider ({inspectModalMessage.telemetry?.provider || channelName})</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopyText(inspectModalMessage.telemetry?.sentPrompt || inspectModalMessage.content, "modal_sent")}
+                    className="text-[10px] text-indigo-400 hover:text-indigo-200 flex items-center space-x-1 cursor-pointer"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>{copiedNotice === "modal_sent" ? "Copied Prompt!" : "Copy Full Prompt"}</span>
+                  </button>
+                </div>
+                <pre className="bg-[#09090B] p-2.5 rounded border border-[#27272A] text-indigo-200 font-mono text-xs overflow-x-auto whitespace-pre-wrap max-h-64 custom-scrollbar leading-relaxed">
+                  {inspectModalMessage.telemetry?.sentPrompt || `[AI PROVIDER EVALUATED PROMPT]\n\n${inspectModalMessage.content}`}
+                </pre>
+              </div>
+
+              {/* Section 4: Response Received */}
+              <div className="bg-[#18181B] p-3 rounded-lg border border-[#27272A] space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-semibold text-gray-200">
+                  <div className="flex items-center space-x-1.5">
+                    <MessageSquare className="w-4 h-4 text-indigo-400" />
+                    <span>4. Consolidated Response Received from AI Provider</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopyText(inspectModalMessage.content, "modal_res")}
+                    className="text-[10px] text-indigo-400 hover:text-indigo-200 flex items-center space-x-1 cursor-pointer"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>{copiedNotice === "modal_res" ? "Copied!" : "Copy"}</span>
+                  </button>
+                </div>
+                <pre className="bg-[#09090B] p-2.5 rounded border border-[#27272A] text-gray-300 font-mono text-xs overflow-x-auto whitespace-pre-wrap max-h-64 custom-scrollbar leading-relaxed">
+                  {inspectModalMessage.content}
+                </pre>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-[#2D2D30] px-4 py-2.5 border-t border-[#3F3F46] flex items-center justify-between text-xs">
+              <span className="text-gray-400">
+                AI Controller: <span className="text-emerald-400 font-semibold">Server-Side Proxy Controller (/api/chat)</span>
+              </span>
+              <button
+                onClick={() => setInspectModalMessage(null)}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-1 rounded transition cursor-pointer"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* VS Status Bar */}
       <div className="bg-[#007ACC] text-white px-3 py-1 flex items-center justify-between text-[10px]">

@@ -678,9 +678,16 @@ Analyze this segment within the context of the overall solution request. Provide
         receivedChunkResponses.join("\n\n---\n\n");
     }
 
-    // 5) CONSOLIDATED RESPONSE RETURNED TO AI CHATBOT INTEGRATOR
+    // 5) CONSOLIDATED RESPONSE & PROMPT TELEMETRY RETURNED TO AI CHATBOT INTEGRATOR
+    const sentPromptFull = totalChunks === 1 
+      ? `[AI PROVIDER EVALUATED PROMPT - SINGLE BATCH]\nProvider: ${providerName}\nPayload Size: ${totalChars} characters (~${estimatedTokens} tokens)\n\n[USER REQUEST]\n${userPrompt}\n\n[SOLUTION CONTEXT & MODIFICATION REQUIREMENTS]\n${solutionRequirements || "- General Visual Studio C# Solution Workspace"}\n\n[FORMATTING INSTRUCTIONS]\nProvide clean, production-ready C# code formatted in \`\`\`csharp code blocks.`
+      : `[AI PROVIDER CHUNKED PROMPTS DISPATCHED - ${totalChunks} LOOPS]\nProvider: ${providerName}\nTotal Characters: ${totalChars} (~${estimatedTokens} tokens)\n\n[USER REQUEST]\n${userPrompt}\n\n[SOLUTION CONTEXT & MODIFICATION REQUIREMENTS]\n${solutionRequirements || "- General Visual Studio C# Solution Workspace"}\n\n[BATCH LOOPS]\nDispatched ${totalChunks} sequential payload batches to ${providerName} and consolidated responses.`;
+
     return res.json({ 
       text: consolidatedResponseText,
+      userPrompt: userPrompt,
+      solutionRequirements: solutionRequirements || "- General Visual Studio C# Solution Workspace",
+      sentPrompt: sentPromptFull,
       evaluatedMetrics: { 
         provider: providerName,
         totalChars, 

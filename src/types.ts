@@ -16,12 +16,23 @@ export interface ExtensionConfig {
   vsVersion?: "2022" | "2026"; // Target Visual Studio Version
 }
 
+export interface PromptTelemetry {
+  userPrompt: string;
+  solutionRequirements: string;
+  sentPrompt: string;
+  provider: string;
+  totalChars: number;
+  estimatedTokens: number;
+  chunksProcessed: number;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
   isCommand?: boolean;
+  telemetry?: PromptTelemetry;
 }
 
 export interface EditorFile {
